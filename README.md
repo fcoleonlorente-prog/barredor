@@ -6,7 +6,11 @@ Aplicación de escritorio desarrollada con Electron, con interfaz en español, a
 
 [Guía de uso](#uso-paso-a-paso) · [Ejecutar desde el código](#ejecutar-desde-el-código) · [Crear instalador](#crear-el-instalador-para-windows) · [Comunicar un problema](https://github.com/fcoleonlorente-prog/barredor/issues)
 
-> **Estado del proyecto:** la versión declarada en el código es 1.0.0. En la revisión de documentación del 24 de octubre de 2026 no había versiones publicadas en GitHub Releases. El número de versión no acredita pruebas de compatibilidad ni una auditoría de seguridad.
+## Descargar
+
+Descarga el instalador para Windows x64 desde [GitHub Releases](https://github.com/fcoleonlorente-prog/barredor/releases/latest). Junto al instalador se publica `SHA256SUMS.txt` para comprobar la integridad del archivo.
+
+Los instaladores de Barredor se firman digitalmente con la ayuda de SignPath Foundation (ver [Política de firma de código](#política-de-firma-de-código)).
 
 > **Requiere administrador.** Barredor necesita permisos de administrador para funcionar completamente. Al abrirlo se reinicia solo con permisos elevados y Windows pedirá confirmación; si la rechazas, funciona en modo limitado (sin borrar `HKLM` ni `Archivos de programa`). El instalador muestra este aviso antes de instalar.
 
@@ -66,7 +70,7 @@ npm run dist
 
 El script utiliza **electron-builder** para generar un instalador **NSIS** en `dist/`. La configuración permite elegir la carpeta de instalación y crear accesos directos en el escritorio y el menú Inicio.
 
-La configuración actual desactiva `signAndEditExecutable`; este repositorio no acredita un instalador firmado. Antes de distribuir un ejecutable, comprueba su procedencia y pruébalo en un entorno de Windows preparado para pruebas.
+Las versiones oficiales se compilan, prueban y publican automáticamente con GitHub Actions (`.github/workflows/release.yml`). Consulta [SIGNING.md](SIGNING.md) para los detalles del proceso de firma.
 
 ## Uso paso a paso
 
@@ -181,11 +185,28 @@ Para proponer mejoras, explica el problema, incluye pasos para comprobar la solu
 - Los mecanismos de exclusión y copia reducen determinados riesgos, pero no garantizan una limpieza sin errores.
 - No se afirma compatibilidad universal, recuperación completa ni eliminación certificada de información.
 
-## Licencia y créditos
+## Política de firma de código
 
-`package.json` declara la licencia **MIT**. En la revisión del 24 de octubre de 2026 no se encontró un archivo `LICENSE`; queda pendiente incorporar el texto y la atribución que correspondan al titular.
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
-El README original indica que el proyecto se creó con **ClonaKit**.
+- **Autores y revisores (committers and reviewers):** [Francisco León](https://github.com/fcoleonlorente-prog)
+- **Aprobadores (approvers):** [Francisco León](https://github.com/fcoleonlorente-prog)
+
+Solo se firman los binarios compilados desde este repositorio por GitHub Actions. Cada firma de una versión requiere la aprobación manual del responsable del proyecto.
+
+## Privacidad
+
+Este programa no transferirá ninguna información a otros sistemas en red a menos que lo solicite expresamente el usuario o la persona que lo instala o utiliza.
+
+*This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.*
+
+Por ejemplo, las búsquedas en Google o la apertura de la web de un programa solo se realizan cuando el usuario pulsa la acción correspondiente, y se abren en el navegador del sistema.
+
+## Licencia
+
+Barredor se distribuye bajo la [licencia MIT](LICENSE). © 2026 Francisco León.
+
+El proyecto se creó con **ClonaKit**.
 
 ---
 
