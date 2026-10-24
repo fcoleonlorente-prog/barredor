@@ -241,6 +241,78 @@ B.tools.wintools = (panel) => {
   return { titulo: 'Herramientas de Windows', alMostrar: cargar, comandos: () => [] };
 };
 
+// ---------- Debloat de Windows ----------
+B.tools.debloat = (panel) => {
+  const { body, stats } = shell(panel, 'debloat', 'Debloat de Windows', 'Quita las aplicaciones de relleno y desactiva características que no usas. Todo se puede deshacer y se crea un punto de restauración.');
+  let pestana = 'apps', apps = [], feats = [], marcadas = new Set(), perfilBase = false, admin = true, ocupado = false;
+  const tabs = h('div', { class: 'tabs-int' }), cuerpo = h('div');
+  body.append(tabs, cuerpo);
+  const pintaTabs = () => tabs.replaceChildren(...[['apps', 'Aplicaciones preinstaladas'], ['feats', 'Características de Windows']].map(([id, n]) => h('button', { class: pestana === id ? 'act' : '', text: n, onclick: () => { pestana = id; marcadas = new Set(); cargar(); } })));
+  const sinAdmin = () => h('div', { class: 'vacio-est' }, ico('debloat', 40), h('b', { text: 'Se necesitan permisos de administrador' }), h('p', { class: 'warn', text: 'Sin ellos Windows no deja listar ni cambiar esto por completo. Reabre Barredor como administrador.' }),
+    h('button', { class: 'btn pri', onclick: async () => { const r = await inv('app:elevate'); if (!r.ok) toast('No se pudo elevar: ' + r.err); } }, 'Reabrir como administrador'));
+  async function cargar() {
+    pintaTabs(); refreshCmd(); showDetails(null);
+    if (pestana === 'apps') {
+      cuerpo.replaceChildren(cargando('Leyendo las aplicaciones y calculando tamaños… puede tardar hasta un minuto.'));
+      const r = await inv('deb:apps'); if (pestana !== 'apps') return;
+      if (r.ok === false) { cuerpo.replaceChildren(vacio('debloat', 'No se pudo leer la lista', r.err)); return; }
+      apps = r.items; admin = r.admin; pintaApps();
+    } else {
+      cuerpo.replaceChildren(cargando('Consultando las características de Windows… puede tardar un par de minutos.'));
+      const r = await inv('deb:feats'); if (pestana !== 'feats') return;
+      admin = r.admin !== false; feats = r.items || [];
+      if (r.ok === false) cuerpo.replaceChildren(vacio('debloat', 'No se pudo leer la lista', r.err)); else pintaFeats();
+    }
+    refreshCmd();
+  }
+  function pintaApps() {
+    const rec = apps.filter((a) => a.recomendada).length;
+    stats.replaceChildren(stat('Aplicaciones', apps.length), stat('Recomendadas', rec, 'acc'), stat('Marcadas', marcadas.size, 'ok'));
+    setStatus(`${apps.length} aplicaciones preinstaladas`);
+    const aviso0 = admin ? null : h('p', { class: 'warn', text: 'No eres administrador: puedes ver la lista, pero para quitar aplicaciones hay que reabrir Barredor como administrador.' });
+    const cb2 = h('input', { type: 'checkbox', checked: perfilBase, onchange: (e) => { perfilBase = e.target.checked; } });
+    cuerpo.replaceChildren(aviso0, h('label', { style: 'display:block;margin:0 0 8px' }, cb2, ' Quitar también del perfil base para que no vuelvan en usuarios nuevos'),
+      apps.length ? h('table', { class: 'fija' }, thead(['', 'Aplicación', 'Editor', 'Versión', 'Tamaño', 'Etiqueta']),
+        h('tbody', {}, apps.map((a) => h('tr', { class: 'row', onclick: () => showDetails([['Aplicación', a.nombre], ['Paquete', a.full], ['Editor', a.editor], ['Versión', a.version], ['Aviso', a.aviso]]) },
+          h('td', {}, h('input', { type: 'checkbox', checked: marcadas.has(a.full), onclick: (e) => e.stopPropagation(), onchange: (e) => { e.target.checked ? marcadas.add(a.full) : marcadas.delete(a.full); stats.replaceChildren(stat('Aplicaciones', apps.length), stat('Recomendadas', rec, 'acc'), stat('Marcadas', marcadas.size, 'ok')); refreshCmd(); } })),
+          h('td', { title: a.name, text: a.nombre }), h('td', { title: a.editor, text: a.editor }), h('td', { text: a.version }), h('td', { text: a.tamano ? fmtSize(a.tamano) : '—' }),
+          h('td', {}, a.recomendada ? h('span', { class: 'badge ok', text: 'Recomendado quitar' }) : a.aviso ? h('span', { class: 'badge warn', title: a.aviso, text: 'Muy usada' }) : null))))) : vacio('debloat', 'No hay aplicaciones que mostrar'));
+  }
+  function marcarRecomendadas() { marcadas = new Set(apps.filter((a) => a.recomendada).map((a) => a.full)); pintaApps(); refreshCmd(); }
+  async function resumen(titulo, r) {
+    if (r.cancelado) return;
+    if (r.ok === false) return aviso(titulo, 'Error: ' + r.err);
+    const txt = [`Hecho: ${r.quitados.length}`, ...r.quitados.map((n) => '  • ' + n)];
+    if (r.fallos.length) txt.push(`Fallos: ${r.fallos.length}`, ...r.fallos.map((f) => `  • ${f.nombre}: ${f.motivo}`));
+    txt.push(...(r.notas || []).filter(Boolean).map((n) => 'Nota: ' + n), r.reinicio ? 'REINICIO NECESARIO para terminar los cambios.' : 'No hace falta reiniciar.');
+    await aviso(titulo, txt.join('\n'));
+  }
+  async function quitar() {
+    if (ocupado) return;
+    if (!marcadas.size) return toast('No hay nada marcado.');
+    ocupado = true; cuerpo.replaceChildren(cargando('Quitando aplicaciones… no cierres Barredor.'));
+    const r = await inv('deb:appsRemove', [...marcadas], perfilBase); ocupado = false;
+    marcadas = new Set(); await resumen('Resumen: aplicaciones', r); cargar();
+  }
+  function pintaFeats() {
+    stats.replaceChildren(stat('Elementos', feats.length), stat('Activadas', feats.filter((f) => f.activa).length, 'ok'));
+    setStatus(`${feats.length} características`);
+    if (!admin) return cuerpo.replaceChildren(sinAdmin());
+    cuerpo.replaceChildren(feats.length ? h('div', { class: 'cards' }, feats.map((f) => h('div', { class: 'ncard' },
+      h('div', { class: 'nhead' }, h('b', { text: f.nombre }), h('span', { class: 'badge ' + (f.activa ? 'ok' : ''), text: f.activa ? 'Activada' : 'Desactivada' }), f.reinicio ? h('span', { class: 'badge warn', text: 'Requiere reinicio' }) : null),
+      h('p', { text: f.desc }), h('p', { class: 'mute', text: 'Si la desactivas: ' + f.perdida }), f.aviso ? h('p', { class: 'warn', text: f.aviso }) : null,
+      h('button', { class: 'btn' + (f.activa ? ' peligro' : ''), disabled: ocupado, onclick: () => cambiar(f) }, f.activa ? 'Desactivar' : 'Activar')))) : vacio('debloat', 'Nada que mostrar', 'Esta edición de Windows no incluye ninguna de las características de la lista.'));
+  }
+  async function cambiar(f) {
+    if (ocupado) return;
+    ocupado = true; cuerpo.replaceChildren(cargando(`${f.activa ? 'Desactivando' : 'Activando'} ${f.nombre}… puede tardar varios minutos.`));
+    const r = await inv('deb:featsSet', [f.id], f.activa ? 'desactivar' : 'activar'); ocupado = false;
+    await resumen('Resumen: características', r); cargar();
+  }
+  return { titulo: 'Debloat de Windows', alMostrar: cargar,
+    comandos: () => pestana === 'apps' ? [{ label: 'Marcar recomendadas', disabled: !apps.length, onClick: marcarRecomendadas }, { label: 'Quitar', peligro: true, disabled: !marcadas.size || !admin, onClick: quitar }, { label: 'Actualizar', onClick: cargar }] : [{ label: 'Actualizar', onClick: cargar }] };
+};
+
 // ---------- Opciones ----------
 B.tools.options = (panel) => {
   const { body } = shell(panel, 'options', 'Opciones', 'Ajusta el comportamiento del desinstalador, las exclusiones y la apariencia.');

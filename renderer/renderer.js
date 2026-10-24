@@ -1,5 +1,5 @@
 // Arranque de la interfaz: atajos, menú, CLI, avisos iniciales.
-const ATAJOS = { u: 'uninstaller', a: 'startup', j: 'junk', r: 'browsers', m: 'office', w: 'windows', e: 'evidence', d: 'shred', b: 'backups', t: 'wintools', o: 'options' };
+const ATAJOS = { u: 'uninstaller', a: 'startup', j: 'junk', r: 'browsers', m: 'office', w: 'windows', e: 'evidence', d: 'shred', b: 'backups', t: 'wintools', p: 'debloat', o: 'options' };
 
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
@@ -58,7 +58,7 @@ api.on('cli', async (c) => {
 
 // ---------- Barra de menú dibujada en HTML (Archivo, Ver, Herramientas, Ayuda) ----------
 const MENU_ALT = { f: 0, v: 1, h: 3 };
-const NOMBRES_HERR = { uninstaller: 'Desinstalador', startup: 'Gestor de inicio', junk: 'Limpiador de archivos basura', browsers: 'Limpiador de navegadores', office: 'Limpiador de Office', windows: 'Limpiador de Windows', shred: 'Borrado seguro', evidence: 'Eliminador de evidencias', backups: 'Gestor de copias', wintools: 'Herramientas de Windows', options: 'Opciones' };
+const NOMBRES_HERR = { uninstaller: 'Desinstalador', startup: 'Gestor de inicio', junk: 'Limpiador de archivos basura', browsers: 'Limpiador de navegadores', office: 'Limpiador de Office', windows: 'Limpiador de Windows', shred: 'Borrado seguro', evidence: 'Eliminador de evidencias', backups: 'Gestor de copias', wintools: 'Herramientas de Windows', debloat: 'Debloat de Windows', options: 'Opciones' };
 const atajoDe = (id) => { const k = Object.keys(ATAJOS).find((x) => ATAJOS[x] === id); return k ? 'Alt+' + k.toUpperCase() : ''; };
 const MENUS = () => [
   ['Archivo', [['Exportar lista a HTML', 'export-html'], ['Exportar lista a TXT', 'export-txt'], ['Reconstruir caché', 'refresh', 'F5'], '-', ['Salir', 'quit', 'Ctrl+Q']]],

@@ -144,6 +144,12 @@ No borres las copias hasta comprobar que el equipo y las aplicaciones funcionan 
 
 Para informar de un fallo, abre una [incidencia](https://github.com/fcoleonlorente-prog/barredor/issues) indicando tu versión de Windows, versión de Barredor, pasos para reproducirlo y mensaje exacto. Oculta nombres de usuario, rutas personales y otros datos sensibles de las capturas o informes.
 
+## Debloat de Windows (Alt+P)
+
+Herramienta con dos pestañas. **Aplicaciones preinstaladas:** lista las apps de la Tienda (Appx), marca como "Recomendado quitar" las de relleno (Xbox, Solitario, Clipchamp, Noticias, Bing, Skype…) y las quita con tu confirmación; opcionalmente también del perfil base para que no vuelvan en usuarios nuevos. **Características de Windows:** una lista cerrada de características y capacidades opcionales (Internet Explorer, SMB 1.0, PowerShell 2.0, WordPad, Hyper-V…) que puedes desactivar o volver a activar.
+
+Seguridad: el proceso principal nunca lista ni quita componentes del sistema (Tienda, menú Inicio, Búsqueda, Seguridad de Windows, Configuración, frameworks, WebView2/Edge, códecs, winget…) y solo acepta paquetes del último listado. Antes de cambiar nada pide confirmación con la lista exacta y crea un punto de restauración (si Windows ya creó uno en las últimas 24 h, continúa). Las apps se reinstalan desde Microsoft Store y las características con el botón Activar. Requiere administrador; algunos cambios piden reiniciar.
+
 ## Desarrollo y comprobaciones
 
 | Comando | Función |

@@ -5,6 +5,7 @@ const INVOKE = ['sys:info', 'cfg:get', 'cfg:set', 'app:elevate', 'prog:list', 'p
   'uninst:prepare', 'uninst:start', 'uninst:wait', 'uninst:skip', 'scan:run', 'scan:delReg', 'scan:delFiles', 'quick:confirm', 'quick:end',
   'file:open', 'file:parent', 'file:props', 'dlg:pick', 'start:list', 'start:run', 'start:kill', 'start:add', 'start:remove', 'start:toggle',
   'junk:scan', 'junk:clean', 'brow:scan', 'brow:clean', 'off:scan', 'off:clean', 'win:scan', 'win:clean', 'shred:run', 'evid:drives', 'evid:start', 'evid:cancel',
+  'deb:apps', 'deb:appsRemove', 'deb:feats', 'deb:featsSet',
   'bk:list', 'bk:restore', 'bk:delete', 'bk:deleteAll', 'bk:open', 'bk:create', 'wt:list', 'wt:run',
   'hunter:open', 'hunter:resolve', 'hunter:procs', 'hunter:kill', 'hunter:folder', 'hunter:unstart', 'hunter:uninstall'];
 const ON = ['menu', 'cli', 'toast', 'open-wizard', 'shred:progreso', 'evid:progreso'];

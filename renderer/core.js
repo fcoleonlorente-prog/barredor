@@ -59,7 +59,7 @@ const ICONS = {
   uninstaller: 'M4 4h16v5H4zM6 9v11h12V9M9.5 13l5 5M14.5 13l-5 5', startup: 'M12 3a9 9 0 100 18 9 9 0 000-18zM10 8.5l6 3.5-6 3.5z', junk: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6',
   browsers: 'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18', office: 'M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6', windows: 'M4 5l7-1v7H4zM13 4l7-1v8h-7zM4 13h7v7l-7-1zM13 13h7v8l-7-1z',
   shred: 'M12 3c1 4 5 6 5 11a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z', evidence: 'M10.5 4a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM15.5 15.5L21 21M8 10.5h5', backups: 'M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-7h8v7',
-  wintools: 'M15 5a4 4 0 00-4 5L4 17a2 2 0 003 3l7-7a4 4 0 005-4l-3 3-3-1-1-3z', options: 'M4 7h10M18 7h2M4 17h2M10 17h10M16 4v6M8 14v6',
+  debloat: 'M4 5h16v14H4zM4 9h16M9 14h6', wintools: 'M15 5a4 4 0 00-4 5L4 17a2 2 0 003 3l7-7a4 4 0 005-4l-3 3-3-1-1-3z', options: 'M4 7h10M18 7h2M4 17h2M10 17h10M16 4v6M8 14v6',
   refresh: 'M20 5v5h-5M4 19v-5h5M5.5 9A7 7 0 0118 7l2 3M18.5 15A7 7 0 016 17l-2-3', bolt: 'M13 3L5 14h6l-1 7 8-11h-6z', force: 'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM9.5 9.5l5 5M14.5 9.5l-5 5',
   target: 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 8a4 4 0 100 8 4 4 0 000-8zM12 11.5v1', plus: 'M12 5v14M5 12h14', folder: 'M3 6h6l2 2h10v11H3z', x: 'M6 6l12 12M18 6L6 18', stop: 'M6 6h12v12H6z',
   restore: 'M4 12a8 8 0 108-8M4 4v5h5M12 8v5l3 2', check: 'M5 12l5 5 9-10', repair: 'M15 5a4 4 0 00-4 5L4 17a2 2 0 003 3l7-7a4 4 0 005-4l-3 3-3-1-1-3z', app: 'M4 5h16v14H4zM4 9h16', search: 'M10.5 4a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM15.5 15.5L21 21'
@@ -130,7 +130,7 @@ function showDetails(pairs, icon) {
 // ---------- Herramientas y pestañas ----------
 const TOOL_LIST = [
   ['uninstaller', 'uninstaller', 'Desinstalador'], ['startup', 'startup', 'Inicio'], ['junk', 'junk', 'Basura'], ['browsers', 'browsers', 'Navegadores'], ['office', 'office', 'Office'],
-  ['windows', 'windows', 'Windows'], ['shred', 'shred', 'Borrado seguro'], ['evidence', 'evidence', 'Evidencias'], ['backups', 'backups', 'Copias'], ['wintools', 'wintools', 'Herram. Windows'], ['options', 'options', 'Opciones']
+  ['windows', 'windows', 'Windows'], ['shred', 'shred', 'Borrado seguro'], ['evidence', 'evidence', 'Evidencias'], ['backups', 'backups', 'Copias'], ['wintools', 'wintools', 'Herram. Windows'], ['debloat', 'debloat', 'Debloat'], ['options', 'options', 'Opciones']
 ];
 function renderSide() {
   $('#side').replaceChildren(...TOOL_LIST.map(([id, ic, nombre]) => h('button', { class: 'tool' + (B.activo === id ? ' act' : ''), title: nombre, onclick: () => openTool(id) }, h('span', { class: 'ic' }, ico(ic, 32)), B.cfg.opciones.textoIconos ? h('span', { class: 'lb', text: nombre }) : null)));

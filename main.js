@@ -7,6 +7,7 @@ const path = require('path');
 const U = require('./lib/util');
 const P = require('./lib/programs');
 const T = require('./lib/tools');
+const D = require('./lib/debloat');
 
 const argv = process.argv.slice(1);
 const flag = (n) => { const i = argv.indexOf(n); return i >= 0 ? (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true) : null; };
@@ -261,6 +262,54 @@ H('bk:create', async () => ({ ok: true, archivos: await T.backupRegistry('manual
 H('wt:list', () => T.winToolsList());
 H('wt:run', (id) => T.winToolRun(id));
 
+// Debloat de Windows: el proceso principal valida todo (lista de protección, solo lo del último listado, solo la lista blanca de características).
+async function puntoRestauracion() {
+  if (!U.loadConfig().opciones.puntoRestauracion) return { seguir: true, nota: 'Sin punto de restauración (desactivado en Opciones).' };
+  const r = await T.createRestorePoint();
+  if (r.ok) return { seguir: true, nota: 'Punto de restauración solicitado (si ya había uno de las últimas 24 h, Windows conserva ese).' };
+  if (/1440|24 h|24 hours|frecuen/i.test(r.err)) return { seguir: true, nota: 'Windows solo permite un punto de restauración cada 24 h; se continúa con el anterior.' };
+  if (!(await confirm('No se pudo crear el punto de restauración.', `${r.err}\n\n¿Quieres continuar sin él?`, 'Continuar sin punto'))) return { seguir: false };
+  return { seguir: true, nota: 'Sin punto de restauración: ' + r.err };
+}
+const REVERTIR = 'Las apps de la Tienda se pueden reinstalar desde Microsoft Store y las características desde esta misma pantalla (botón Activar).';
+H('deb:apps', async () => {
+  const items = await D.appList();
+  return { ok: true, admin: U.isElevated(), items };
+});
+H('deb:appsRemove', async (fulls, perfilBase) => {
+  if (!U.isElevated()) return { ok: false, err: 'Quitar aplicaciones requiere permisos de administrador. Reabre Barredor como administrador.' };
+  const ids = [...new Set(Array.isArray(fulls) ? fulls.filter((x) => typeof x === 'string') : [])];
+  const sel = ids.filter((f) => { const a = D.appInfo(f); return a && !D.appBloqueada({ Name: a.name }); });
+  if (!sel.length) return { ok: false, err: 'Ninguna aplicación válida: actualiza la lista y vuelve a marcar.' };
+  const nombres = sel.map((f) => { const a = D.appInfo(f); return `• ${a.nombre}${a.aviso ? '  (¡aviso! ' + a.aviso + ')' : ''}`; });
+  if (!(await confirm(`¿Quitar ${sel.length} aplicación(es) de Windows?`, nombres.join('\n') + (perfilBase ? '\n\nTambién se quitarán del perfil base (no volverán en usuarios nuevos).' : '') + '\n\n' + REVERTIR, 'Quitar'))) return { ok: false, cancelado: true };
+  const pr = await puntoRestauracion(); if (!pr.seguir) return { ok: false, cancelado: true };
+  const quitados = [], fallos = [], notas = [pr.nota];
+  for (const f of sel) {
+    const a = D.appInfo(f), r = await D.appRemove(f, !!perfilBase);
+    if (r.ok) { quitados.push(a.nombre); if (r.nota) notas.push(`${a.nombre}: ${r.nota}`); } else fallos.push({ nombre: a.nombre, motivo: r.err });
+  }
+  return { ok: true, quitados, fallos, notas, reinicio: false };
+});
+H('deb:feats', async () => {
+  if (!U.isElevated()) return { ok: true, admin: false, items: [] };
+  return { ok: true, admin: true, items: await D.featList() };
+});
+H('deb:featsSet', async (ids, accion) => {
+  if (!U.isElevated()) return { ok: false, err: 'Cambiar características requiere permisos de administrador. Reabre Barredor como administrador.' };
+  if (accion !== 'activar' && accion !== 'desactivar') return { ok: false, err: 'Acción no válida.' };
+  const sel = [...new Set(Array.isArray(ids) ? ids : [])].map((i) => D.featDe(i)).filter(Boolean);
+  if (!sel.length) return { ok: false, err: 'Ninguna entrada válida.' };
+  const off = accion === 'desactivar', verbo = off ? 'Desactivar' : 'Activar';
+  const det = sel.map((f) => `• ${f.nombre}${off ? ' — ' + f.perdida : ''}${f.aviso ? '\n   ¡Aviso! ' + f.aviso : ''}`).join('\n');
+  if (!(await confirm(`¿${verbo} ${sel.length} característica(s) de Windows?`, det + '\n\n' + (off ? REVERTIR : 'Activar puede necesitar internet (Windows Update) para descargar el componente.'), verbo))) return { ok: false, cancelado: true };
+  const notas = [];
+  if (off) { const pr = await puntoRestauracion(); if (!pr.seguir) return { ok: false, cancelado: true }; notas.push(pr.nota); }
+  const hechos = [], fallos = []; let reinicio = false;
+  for (const f of sel) { const r = await D.featSet(f.id, accion); if (r.ok) { hechos.push(f.nombre); reinicio = reinicio || r.reinicio; } else fallos.push({ nombre: f.nombre, motivo: r.err }); }
+  return { ok: true, quitados: hechos, fallos, notas, reinicio };
+});
+
 // Cazador
 H('hunter:open', () => { openHunter(); return true; });
 H('hunter:resolve', (f) => resolveExe(f));
@@ -286,7 +335,7 @@ async function selfTest() {
     t('ventana', await win.webContents.executeJavaScript('({titulo:document.title, hayApp:!!document.getElementById("app"), puente:typeof window.barredor})'));
     await new Promise((r) => setTimeout(r, 12000));
     t('interfaz', await win.webContents.executeJavaScript('({herramientas:document.querySelectorAll(".tool").length, filas:document.querySelectorAll("tr.row").length})'));
-    for (const id of ['startup', 'junk', 'browsers', 'office', 'windows', 'shred', 'evidence', 'backups', 'wintools', 'options']) await win.webContents.executeJavaScript('openTool("' + id + '")');
+    for (const id of ['startup', 'junk', 'browsers', 'office', 'windows', 'shred', 'evidence', 'backups', 'wintools', 'debloat', 'options']) await win.webContents.executeJavaScript('openTool("' + id + '")');
     await new Promise((r) => setTimeout(r, 4000)); t('errores_consola', errs);
     const lista = await win.webContents.executeJavaScript('window.barredor.invoke("prog:list")');
     t('programas_via_preload', { total: lista.length, ejemplos: lista.slice(0, 5).map((p) => `${p.nombre} ${p.version}`) });
@@ -306,7 +355,16 @@ async function selfTest() {
     // Papelera con una carpeta de prueba propia
     const d2 = fs.mkdtempSync(path.join(os.tmpdir(), 'barredor-selftest2-')); fs.writeFileSync(path.join(d2, 'x.txt'), 'x');
     const rp = await U.removePath(d2, true); t('papelera', { ok: rp.ok, existe: fs.existsSync(d2) });
-    out.ok = !!(lista.length > 0 && out.pruebas.ventana.hayApp && out.pruebas.ventana.puente === 'object' && !fs.existsSync(dir) && !fs.existsSync(d2));
+    // Debloat: SOLO lectura. Nada se quita ni se desactiva.
+    const apps = await D.appList(); t('debloat_apps', { total: apps.length, recomendadas: apps.filter((a) => a.recomendada).length, ejemplos: apps.slice(0, 4).map((a) => `${a.nombre} ${a.version}`) });
+    const bloq = { tienda: D.appBloqueada({ Name: 'Microsoft.WindowsStore' }), compra: D.appBloqueada({ Name: 'Microsoft.StorePurchaseApp' }), shell: D.appBloqueada({ Name: 'Microsoft.Windows.ShellExperienceHost' }), vclibs: D.appBloqueada({ Name: 'Microsoft.VCLibs.140.00' }), framework: D.appBloqueada({ Name: 'Contoso.Cosa', IsFramework: true }), noQuitable: D.appBloqueada({ Name: 'Contoso.Cosa', NonRemovable: true }), winget: D.appBloqueada({ Name: 'Microsoft.DesktopAppInstaller' }), noticias: D.appBloqueada({ Name: 'Microsoft.BingNews' }), calculadora: D.appBloqueada({ Name: 'Microsoft.WindowsCalculator' }) };
+    t('debloat_proteccion', bloq);
+    const sinProtegidas = apps.every((a) => !D.appBloqueada({ Name: a.name }));
+    const rechazo = await D.appRemove('Microsoft.WindowsStore_0.0.0.0_x64__8wekyb3d8bbwe', false); t('debloat_rechazo_no_listado', rechazo);
+    const feats = U.isElevated() ? await D.featList() : []; t('debloat_caracteristicas', { admin: U.isElevated(), total: feats.length, ejemplos: feats.slice(0, 4).map((f) => `${f.nombre}:${f.activa ? 'Activada' : 'Desactivada'}`) });
+    const rechazoFeat = await D.featSet('Cualquier-Otra-Cosa', 'desactivar'); t('debloat_lista_blanca', rechazoFeat);
+    const debOk = !!(bloq.tienda && bloq.compra && bloq.shell && bloq.vclibs && bloq.framework && bloq.noQuitable && bloq.winget && !bloq.noticias && !bloq.calculadora && sinProtegidas && rechazo.ok === false && rechazoFeat.ok === false);
+    out.ok = !!(debOk && lista.length > 0 && out.pruebas.ventana.hayApp && out.pruebas.ventana.puente === 'object' && !fs.existsSync(dir) && !fs.existsSync(d2));
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); console.log('[selftest] ERROR', out.error); }
   try { fs.writeFileSync(path.join(U.DATA, 'selftest.json'), JSON.stringify(out, null, 2)); } catch { /* ignorar */ }
   console.log('[selftest] RESULTADO', out.ok ? 'OK' : 'FALLO');
