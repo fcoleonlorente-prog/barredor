@@ -40,7 +40,9 @@
       "license": "build/aviso.txt",
       "installerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
-      "uninstallDisplayName": "Barredor"
+      "uninstallDisplayName": "Barredor",
+      "uninstallerIcon": "build/icon.ico",
+      "include": "build/installer.nsh"
     },
     "artifactName": "barredor-${version}-windows-${arch}.${ext}",
     "afterPack": "build/afterPack.js"
