@@ -106,7 +106,7 @@ function modal({ titulo, cuerpo, botones = [], chico = false, pasos = null }) {
   ov.classList.add('on');
   return api2;
 }
-const aviso = (titulo, texto) => new Promise((res) => modal({ titulo, chico: true, cuerpo: h('p', { text: texto }), botones: [{ label: 'Entendido', pri: true, onClick: () => res() }] }));
+const aviso = (titulo, texto) => new Promise((res) => modal({ titulo, chico: true, cuerpo: h('p', { text: texto, style: 'white-space:pre-wrap;max-height:60vh;overflow:auto;user-select:text' }), botones: [{ label: 'Entendido', pri: true, onClick: () => res() }] }));
 
 // ---------- Menú contextual ----------
 function ctxMenu(ev, items) {
