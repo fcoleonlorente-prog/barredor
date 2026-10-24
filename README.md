@@ -8,6 +8,8 @@ Aplicación de escritorio desarrollada con Electron, con interfaz en español, a
 
 > **Estado del proyecto:** la versión declarada en el código es 1.0.0. En la revisión de documentación del 24 de octubre de 2026 no había versiones publicadas en GitHub Releases. El número de versión no acredita pruebas de compatibilidad ni una auditoría de seguridad.
 
+> **Requiere administrador.** Barredor necesita permisos de administrador para funcionar completamente. Al abrirlo se reinicia solo con permisos elevados y Windows pedirá confirmación; si la rechazas, funciona en modo limitado (sin borrar `HKLM` ni `Archivos de programa`). El instalador muestra este aviso antes de instalar.
+
 ## ¿Qué puedes hacer?
 
 | Función | Descripción |

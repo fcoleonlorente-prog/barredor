@@ -48,7 +48,7 @@ api.on('cli', async (c) => {
   applyView();
   openTool('uninstaller');
   if (!B.cfg.avisoVisto) {
-    await new Promise((res) => modal({ titulo: 'Antes de empezar', chico: true, cuerpo: h('p', { text: 'Haz copia de seguridad; borrar archivos y claves puede dañar programas. Barredor guarda copias de lo que borra, pero revisa siempre antes de confirmar.' }), botones: [{ label: 'Lo entiendo', pri: true, onClick: async () => { await saveCfg({ avisoVisto: true }); res(); } }] }));
+    await new Promise((res) => modal({ titulo: 'Antes de empezar', chico: true, cuerpo: h('div', {}, h('p', { text: 'Haz copia de seguridad; borrar archivos y claves puede dañar programas. Barredor guarda copias de lo que borra, pero revisa siempre antes de confirmar.' }), h('p', { class: 'warn', text: 'Barredor necesita permisos de administrador para funcionar completamente (registro de la máquina y Archivos de programa). Si rechazas el aviso de Windows, algunos restos no se podrán borrar.' })), botones: [{ label: 'Lo entiendo', pri: true, onClick: async () => { await saveCfg({ avisoVisto: true }); res(); } }] }));
   }
   if (!B.info.admin) {
     modal({ titulo: 'No eres administrador', chico: true, cuerpo: h('p', { text: 'Algunas acciones (claves de HKLM, Windows\\Temp, sfc) pueden fallar sin permisos de administrador. ¿Quieres reabrir Barredor como administrador?' }),

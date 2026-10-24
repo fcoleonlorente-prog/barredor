@@ -1,0 +1,16 @@
+BARREDOR - AVISO IMPORTANTE ANTES DE INSTALAR
+
+1. Barredor necesita PERMISOS DE ADMINISTRADOR para funcionar completamente.
+   Sin ellos no puede borrar claves del registro de la maquina (HKLM) ni carpetas
+   dentro de "Archivos de programa". Al abrirlo, Windows te pedira confirmacion
+   (control de cuentas de usuario): pulsa "Si". Si la rechazas, funcionara en modo
+   limitado y algunos restos no se podran borrar.
+
+2. Borrar archivos y claves del registro puede danar programas. Barredor crea un
+   punto de restauracion y guarda copias de lo que borra (Gestor de copias) y envia
+   los archivos a la Papelera, pero revisa siempre antes de confirmar.
+
+3. El instalador no esta firmado digitalmente: Windows SmartScreen puede mostrar
+   "editor desconocido". Pulsa "Mas informacion" y "Ejecutar de todas formas".
+
+4. Sin telemetria ni conexiones a internet. Licencia MIT.
