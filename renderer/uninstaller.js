@@ -2,13 +2,14 @@
 B.uninst = {};
 
 B.tools.uninstaller = (panel) => {
-  const st = { progs: [], vista: 'detalles', q: '', grupo: 'Todos', col: 'nombre', dir: 1, sel: new Set(), cargando: false };
-  const buscador = h('input', { type: 'text', placeholder: 'Buscar por nombre, editor o comentario…', style: 'width:320px', oninput: (e) => { st.q = e.target.value.toLowerCase(); pintar(); } });
+  const st = { progs: [], vista: 'detalles', q: '', grupo: 'Todos', col: 'nombre', dir: 1, sel: new Set(), cargando: false, colapsados: new Set(), anchos: {} };
+  const buscador = h('input', { type: 'text', placeholder: 'Buscar por nombre, editor o comentario…', oninput: (e) => { st.q = e.target.value.toLowerCase(); pintar(); } });
   const selGrupo = h('select', { onchange: (e) => { st.grupo = e.target.value; pintar(); } });
   const selVista = h('select', { onchange: (e) => { st.vista = e.target.value; pintar(); } }, ['iconos|Iconos', 'lista|Lista', 'detalles|Detalles'].map((x) => h('option', { value: x.split('|')[0], selected: x.startsWith(st.vista), text: x.split('|')[1] })));
-  const cuenta = h('span', { class: 'mute' });
-  const cont = h('div');
-  panel.append(h('div', { class: 'bar' }, buscador, h('span', { class: 'mute', text: 'Grupo:' }), selGrupo, h('span', { class: 'mute', text: 'Vista:' }), selVista, cuenta), cont);
+  const cuenta = h('span', { class: 'cuenta' });
+  const cont = h('div', { class: 'scroll' });
+  panel.classList.add('split');
+  panel.append(h('div', { class: 'bar toolbar' }, h('div', { class: 'search' }, ico('search', 16), buscador), h('span', { class: 'grow' }), cuenta, h('label', { class: 'mute', text: 'Grupo' }), selGrupo, h('label', { class: 'mute', text: 'Vista' }), selVista), cont);
 
   const comentarioDe = (p) => B.cfg.comentarios[p.clave] || p.comentario || '';
   const esNuevo = (p) => p.fecha && (Date.now() - new Date(p.fecha).getTime()) / 864e5 <= (B.cfg.opciones.diasNuevos || 7);
@@ -30,7 +31,7 @@ B.tools.uninstaller = (panel) => {
   }
   function mostrar(p) {
     showDetails([['Nombre', p.nombre], ['Versión', p.version], ['Editor', p.editor], ['Tamaño', p.tamanoKB ? fmtSize(p.tamanoKB * 1024) : ''], ['Instalado', p.fecha], ['Ubicación', p.ubicacion],
-      ['Desinstalación', p.desinstalar], ['Clave', p.clave], ['Web', p.web], ['Comentario', comentarioDe(p)], ['Grupos', gruposDe(p).join(', ')]]);
+      ['Desinstalación', p.desinstalar], ['Clave', p.clave], ['Web', p.web], ['Comentario', comentarioDe(p)], ['Grupos', gruposDe(p).join(', ')]], iconoProg(p, 48));
   }
   function menu(ev, p) {
     if (!st.sel.has(p.clave)) seleccionar(p);
@@ -60,20 +61,40 @@ B.tools.uninstaller = (panel) => {
   function pintar() {
     selGrupo.replaceChildren(...['Todos', 'Nuevos', ...Object.keys(B.cfg.grupos)].map((g) => h('option', { value: g, selected: g === st.grupo, text: g })));
     const l = filtrados();
-    cuenta.textContent = st.q ? `${l.length} encontrados` : '';
-    setStatus(st.cargando ? 'Leyendo programas…' : `${st.progs.length} programas`, st.sel.size > 1 ? `${st.sel.size} seleccionados` : '');
+    cuenta.textContent = `${l.length} encontrados`;
+    setStatus(st.cargando ? 'Leyendo programas…' : `${l.length === st.progs.length ? st.progs.length : l.length + ' de ' + st.progs.length} programas`, st.sel.size > 1 ? `${st.sel.size} seleccionados` : '');
+    if (!l.length) { cont.replaceChildren(h('div', { class: 'vacio-msg', text: st.cargando ? 'Leyendo programas instalados…' : 'No hay programas que mostrar.' })); return; }
     if (st.vista === 'detalles') {
-      const cols = [['nombre', 'Nombre'], ['editor', 'Editor'], ['version', 'Versión'], ['tamanoKB', 'Tamaño'], ['fecha', 'Instalado'], ['ubicacion', 'Ubicación']];
-      cont.replaceChildren(h('table', {}, h('thead', {}, h('tr', {}, cols.map(([c, t]) => h('th', { onclick: () => { st.dir = st.col === c ? -st.dir : 1; st.col = c; pintar(); } }, t + (st.col === c ? (st.dir > 0 ? ' ▲' : ' ▼') : ''))))),
-        h('tbody', {}, l.map((p) => h('tr', { class: 'row' + (st.sel.has(p.clave) ? ' sel' : ''), ...fila(p) }, h('td', { text: p.nombre }), h('td', { text: p.editor }), h('td', { text: p.version }), h('td', { class: 'num', text: p.tamanoKB ? fmtSize(p.tamanoKB * 1024) : '' }), h('td', { text: p.fecha }), h('td', { text: p.ubicacion }))))));
+      const cols = [['nombre', 'Nombre', 280], ['editor', 'Editor', 180], ['version', 'Versión', 100], ['tamanoKB', 'Tamaño', 90], ['fecha', 'Instalado', 100], ['ubicacion', 'Ubicación', 320]];
+      const ancho = (c) => st.anchos[c[0]] || c[2];
+      const tabla = h('table', { class: 'fija', style: `width:${cols.reduce((a, c) => a + ancho(c), 0)}px` });
+      const asa = (c, th) => h('i', { class: 'grip', onclick: (e) => e.stopPropagation(), onmousedown: (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const x0 = e.clientX, w0 = th.offsetWidth;
+        const mv = (ev) => { st.anchos[c[0]] = Math.max(50, w0 + ev.clientX - x0); th.style.width = st.anchos[c[0]] + 'px'; tabla.style.width = cols.reduce((a, k) => a + ancho(k), 0) + 'px'; };
+        const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+        addEventListener('mousemove', mv); addEventListener('mouseup', up);
+      } });
+      tabla.append(h('thead', {}, h('tr', {}, cols.map((c) => { const th = h('th', { class: st.col === c[0] ? 'ord' : '', style: `width:${ancho(c)}px`, onclick: () => { st.dir = st.col === c[0] ? -st.dir : 1; st.col = c[0]; pintar(); } }, c[1], st.col === c[0] ? h('span', { class: 'arr', text: st.dir > 0 ? '▲' : '▼' }) : null); th.append(asa(c, th)); return th; }))),
+        h('tbody', {}, l.map((p) => h('tr', { class: 'row' + (st.sel.has(p.clave) ? ' sel' : ''), ...fila(p) }, h('td', { title: p.nombre }, h('span', { class: 'nmc' }, iconoProg(p, 18), h('span', { text: p.nombre }))), h('td', { title: p.editor, text: p.editor }), h('td', { title: p.version, text: p.version }), h('td', { class: 'num', text: p.tamanoKB ? fmtSize(p.tamanoKB * 1024) : '' }), h('td', { text: p.fecha }), h('td', { title: p.ubicacion, text: p.ubicacion })))));
+      cont.replaceChildren(tabla);
     } else if (st.vista === 'lista') {
-      cont.replaceChildren(h('div', { class: 'lista' }, l.map((p) => h('div', { class: 'it' + (st.sel.has(p.clave) ? ' sel' : ''), ...fila(p) }, chip(p.nombre), h('span', { text: p.nombre }), h('span', { class: 'mute', text: p.version })))));
+      cont.replaceChildren(h('div', { class: 'lista' }, l.map((p) => h('div', { class: 'it' + (st.sel.has(p.clave) ? ' sel' : ''), ...fila(p) }, iconoProg(p, 24), h('span', { class: 'nm', text: p.nombre }), h('span', { class: 'mute', text: p.version })))));
     } else {
-      const card = (p) => h('div', { class: 'card' + (st.sel.has(p.clave) ? ' sel' : ''), title: p.nombre, ...fila(p) }, chip(p.nombre), h('div', { class: 'nm', text: p.nombre }));
+      const card = (p) => h('div', { class: 'card' + (st.sel.has(p.clave) ? ' sel' : ''), title: p.nombre, ...fila(p) }, iconoProg(p, 40), h('div', { class: 'nm', text: p.nombre }));
+      const secciones = [];
       if (st.grupo === 'Todos') {
-        const nuevos = l.filter(esNuevo), otros = l.filter((p) => !esNuevo(p));
-        cont.replaceChildren(...(nuevos.length ? [h('div', { class: 'grp', text: `Nuevos (${nuevos.length})` }), h('div', { class: 'grid' }, nuevos.map(card))] : []), h('div', { class: 'grp', text: `Otros (${otros.length})` }), h('div', { class: 'grid' }, otros.map(card)));
-      } else cont.replaceChildren(h('div', { class: 'grid' }, l.map(card)));
+        const usados = new Set(); const toma = (fn) => l.filter((p) => !usados.has(p.clave) && fn(p) && usados.add(p.clave));
+        secciones.push(['Nuevos', toma(esNuevo)]);
+        for (const g of Object.keys(B.cfg.grupos)) secciones.push([g, toma((p) => (B.cfg.grupos[g] || []).includes(p.clave))]);
+        secciones.push(['Otros', toma(() => true)]);
+      } else secciones.push([st.grupo, l]);
+      cont.replaceChildren(...secciones.filter(([, it]) => it.length).map(([g, it]) => {
+        const cerrado = st.colapsados.has(g);
+        return h('section', { class: 'gsec' + (cerrado ? ' cerrado' : '') },
+          h('div', { class: 'gh', onclick: () => { cerrado ? st.colapsados.delete(g) : st.colapsados.add(g); pintar(); } }, h('span', { class: 'chev', text: '▾' }), h('b', { text: g }), h('span', { class: 'pill', text: it.length })),
+          cerrado ? null : h('div', { class: 'grid' }, it.map(card)));
+      }));
     }
   }
   async function cargar() {
@@ -96,8 +117,8 @@ B.tools.uninstaller = (panel) => {
     titulo: 'Desinstalador',
     comandos: () => {
       const p = seleccionados()[0];
-      return [{ label: 'Desinstalar', pri: true, atajo: 'Ctrl+U', onClick: desinstalar }, { label: 'Desinstalación rápida', atajo: 'Ctrl+Q', onClick: rapida }, { label: 'Desinstalación forzada', atajo: 'Ctrl+F', onClick: () => forzada() },
-        ...(p && p.modificar ? [{ label: 'Cambiar / Reparar', onClick: cambiar }] : []), { label: 'Actualizar', atajo: 'Ctrl+R', onClick: cargar }, { label: 'Modo cazador', onClick: hunter }];
+      return [{ label: 'Desinstalar', pri: true, atajo: 'Ctrl+U', disabled: !p, onClick: desinstalar }, { label: 'Desinstalación rápida', atajo: 'Ctrl+Q', disabled: !p, onClick: rapida }, { label: 'Desinstalación forzada', atajo: 'Ctrl+F', onClick: () => forzada() },
+        ...(p && p.modificar ? [{ label: 'Cambiar / Reparar', onClick: cambiar }] : []), '-', { label: 'Actualizar', atajo: 'Ctrl+R', onClick: cargar }, { label: 'Modo cazador', onClick: hunter }];
     },
     alMostrar: () => { if (!st.progs.length && !st.cargando) cargar(); }
   };
@@ -159,14 +180,15 @@ function asistente({ prog, forzada, nombre }) {
     const forzadoUI = ctx.forzada ? [h('p', { text: 'Para programas ya borrados, a medias o que no aparecen en la lista. No se lanza ningún desinstalador: solo se buscan y borran restos.' }), inNombre,
       h('div', { class: 'bar', style: 'margin-top:8px' }, h('button', { class: 'btn', onclick: async () => { const [f] = await inv('dlg:pick', 'folder'); if (f) { ctx.installDir = f; if (!inNombre.value) inNombre.value = f.split('\\').pop(); infoDir.textContent = 'Carpeta: ' + f; } } }, 'Elegir carpeta…'),
         h('button', { class: 'btn', onclick: async () => { const [f] = await inv('dlg:pick', 'exe'); if (f) { const d = f.replace(/\\[^\\]+$/, ''); ctx.installDir = d; if (!inNombre.value) inNombre.value = f.split('\\').pop().replace(/\.[^.]+$/, ''); infoDir.textContent = 'Carpeta: ' + d; } } }, 'Elegir ejecutable…')), infoDir] : [h('p', {}, 'Vas a desinstalar ', h('b', { text: ctx.nombre }), '. Elige a qué profundidad buscar los restos:')];
-    modal({ titulo: ctx.forzada ? 'Desinstalación forzada' : 'Asistente de desinstalación', cuerpo: [...forzadoUI, h('h3', { text: 'Modo de análisis' }), radios, h('p', { class: 'mute', text: 'Se creará un punto de restauración (si hay permisos) y una copia del registro antes de empezar.' })],
+    modal({ titulo: ctx.forzada ? 'Desinstalación forzada' : 'Asistente de desinstalación', pasos: ['Modo', 'Análisis', 'Registro', 'Archivos', 'Resumen'], cuerpo: [...forzadoUI, h('h3', { text: 'Modo de análisis' }), radios, h('p', { class: 'mute', text: 'Se creará un punto de restauración (si hay permisos) y una copia del registro antes de empezar.' })],
       botones: [{ label: 'Cancelar' }, { label: 'Continuar', pri: true, cierra: false, onClick: (m) => { if (ctx.forzada) { ctx.nombre = inNombre.value.trim(); if (!ctx.nombre && !ctx.installDir) { toast('Escribe un nombre o elige una carpeta.'); return false; } } paso2(m); return false; } }] });
   }
 
   async function paso2(m) {
     const log = h('div', { class: 'log' });
     const add = (t) => { log.append(t + '\n'); log.scrollTop = log.scrollHeight; };
-    m.body.replaceChildren(h('p', {}, h('span', { class: 'spin' }), 'Preparando…'), log);
+    m.paso(1);
+    m.body.replaceChildren(h('p', {}, h('span', { class: 'spin' }), 'Preparando…'), h('div', { class: 'prog ind' }, h('i')), log);
     m.foot.replaceChildren();
     add('Creando punto de restauración y copia del registro…');
     const pr = await inv('uninst:prepare', { restore: true, backup: true });
@@ -187,7 +209,8 @@ function asistente({ prog, forzada, nombre }) {
 
   async function escanear(m, add) {
     m.foot.replaceChildren();
-    m.body.replaceChildren(h('p', {}, h('span', { class: 'spin' }), 'Buscando restos (puede tardar un minuto)…'));
+    m.paso(1);
+    m.body.replaceChildren(h('p', {}, h('span', { class: 'spin' }), 'Buscando restos (puede tardar un minuto)…'), h('div', { class: 'prog ind' }, h('i')));
     const r = await inv('scan:run', { name: ctx.nombre, publisher: ctx.prog ? ctx.prog.editor : '', installDir: ctx.installDir, originalKey: ctx.prog ? ctx.prog.clave : '', uninstall: ctx.prog ? ctx.prog.desinstalar : '', mode: ctx.modo, forced: ctx.forzada });
     if (r.ok === false) { m.body.replaceChildren(h('p', { class: 'bad', text: 'Error en el escaneo: ' + r.err })); m.foot.append(h('button', { class: 'btn', onclick: m.cerrar }, 'Cerrar')); return; }
     ctx.scan = r;
@@ -196,6 +219,7 @@ function asistente({ prog, forzada, nombre }) {
 
   function pantallaRegistro(m) {
     const filas = []; window.__restos = ctx.scan.registro;
+    m.paso(2);
     const arbol = pintarArbol(construirArbol(ctx.scan.registro), filas);
     const vacio = !ctx.scan.registro.length;
     m.titulo.textContent = `Restos del registro (${ctx.scan.registro.length})`;
@@ -221,6 +245,7 @@ function asistente({ prog, forzada, nombre }) {
 
   function pantallaArchivos(m) {
     const cbs = [];
+    m.paso(3);
     const l = ctx.scan.archivos;
     m.titulo.textContent = `Restos de archivos y carpetas (${l.length})`;
     const tabla = h('table', {}, h('thead', {}, h('tr', {}, h('th'), h('th', { text: 'Ruta' }), h('th', { text: 'Tipo' }), h('th', { text: 'Tamaño' }))),
@@ -246,6 +271,7 @@ function asistente({ prog, forzada, nombre }) {
   }
 
   function resumen(m) {
+    m.paso(4);
     m.titulo.textContent = 'Resumen';
     m.body.replaceChildren(h('h3', { text: ctx.nombre }), h('p', { class: 'ok', text: `Claves del registro borradas: ${ctx.borrados.reg}` }), h('p', { class: 'ok', text: `Archivos y carpetas borrados: ${ctx.borrados.arch}` }),
       ctx.omitidas ? h('p', { class: 'mute', text: `Coincidencias débiles que se dejaron sin tocar: ${ctx.omitidas}` }) : null,
@@ -260,14 +286,15 @@ async function desinstalacionRapida(progs) {
   if (!(await inv('quick:confirm', progs.map((p) => p.nombre)))) return;
   const log = h('div', { class: 'log', style: 'max-height:340px' });
   const add = (t) => { log.append(t + '\n'); log.scrollTop = log.scrollHeight; };
-  const m = modal({ titulo: 'Desinstalación rápida', cuerpo: [h('p', { text: 'Se desinstalan uno a uno. No cierres Barredor.' }), log], botones: [] });
+  const barra = h('i');
+  const m = modal({ titulo: 'Desinstalación rápida', cuerpo: [h('p', { text: 'Se desinstalan uno a uno. No cierres Barredor.' }), h('div', { class: 'prog' }, barra), h('div', { style: 'height:10px' }), log], botones: [] });
   let total = 0;
   try {
     add('Punto de restauración y copia del registro (una vez)…');
     const pr = await inv('uninst:prepare', { restore: true, backup: true });
     if (pr.restore && !pr.restore.ok) add('AVISO: sin punto de restauración (' + pr.restore.err + ').');
     for (const [i, p] of progs.entries()) {
-      add(`\n[${i + 1}/${progs.length}] ${p.nombre}`);
+      add(`\n[${i + 1}/${progs.length}] ${p.nombre}`); barra.style.width = Math.round((i / progs.length) * 100) + '%';
       const s = await inv('uninst:start', p.clave, true);
       if (!s.ok) { add('  No se pudo lanzar: ' + (s.err || 'cancelado')); continue; }
       await inv('uninst:wait', s.id);
@@ -280,6 +307,7 @@ async function desinstalacionRapida(progs) {
       const n = (a.borrados || 0) + (b.borrados || 0); total += n;
       add(`  Restos borrados: ${n} (${a.borrados || 0} claves, ${b.borrados || 0} archivos).`);
     }
+    barra.style.width = '100%';
     add(`\nTerminado. Total de restos borrados: ${total}.`);
   } finally { await inv('quick:end'); }
   m.foot.replaceChildren(h('button', { class: 'btn pri', onclick: () => { m.cerrar(); B.uninst.actualizar(); } }, 'Cerrar'));

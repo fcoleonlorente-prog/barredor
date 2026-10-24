@@ -33,7 +33,7 @@ const fmtSize = (n) => (n > 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1280, height: 780, minWidth: 980, minHeight: 600, show: !SELFTEST, backgroundColor: '#0f1417', title: 'Barredor',
+    width: 1280, height: 780, minWidth: 980, minHeight: 600, show: !SELFTEST, backgroundColor: '#f4f7f8', title: 'Barredor',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -64,7 +64,7 @@ function buildMenu() {
 function openHunter() {
   if (hunterWin && !hunterWin.isDestroyed()) { hunterWin.focus(); return; }
   hunterWin = new BrowserWindow({
-    width: 360, height: 420, alwaysOnTop: true, resizable: false, minimizable: true, title: 'Modo cazador', autoHideMenuBar: true, backgroundColor: '#0f1417',
+    width: 360, height: 420, alwaysOnTop: true, resizable: false, minimizable: true, title: 'Modo cazador', autoHideMenuBar: true, backgroundColor: '#f4f7f8',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   hunterWin.setMenu(null);
@@ -112,6 +112,26 @@ H('app:elevate', async () => {
 
 // Programas
 H('prog:list', async () => P.listPrograms(U.loadConfig().opciones));
+// Icono real del programa (DisplayIcon o primer .exe de su carpeta), en caché y como data URL.
+const iconCache = new Map();
+function iconPathOf(p) {
+  const ic = String(p.icono || '').trim().replace(/^"([^"]*)".*$/, '$1').replace(/,\s*-?\d+$/, '').replace(/%([^%]+)%/g, (m, v) => process.env[v] || m);
+  if (ic && fs.existsSync(ic)) return ic;
+  try {
+    if (p.ubicacion && fs.existsSync(p.ubicacion)) {
+      const e = fs.readdirSync(p.ubicacion).find((f) => /\.exe$/i.test(f) && !/^(unins|uninst|setup|update)/i.test(f));
+      if (e) return path.join(p.ubicacion, e);
+    }
+  } catch { /* sin permisos */ }
+  return '';
+}
+H('prog:icon', async (key) => {
+  if (iconCache.has(key)) return iconCache.get(key);
+  const p = await P.getProgram(key); let url = null;
+  const f = p ? iconPathOf(p) : '';
+  if (f) { try { const img = await app.getFileIcon(f, { size: 'large' }); if (!img.isEmpty()) url = img.toDataURL(); } catch { /* sin icono */ } }
+  iconCache.set(key, url); return url;
+});
 H('prog:openLocation', async (key) => { const p = await P.getProgram(key); if (!p || !p.ubicacion || !fs.existsSync(p.ubicacion)) return { ok: false, err: 'No hay ubicación de instalación conocida.' }; const r = await shell.openPath(p.ubicacion); return { ok: !r, err: r }; });
 H('prog:openKey', async (key) => {
   if (typeof key !== 'string' || !/^(HKCU|HKLM|HKEY_CURRENT_USER|HKEY_LOCAL_MACHINE)\\[^"\r\n]+$/i.test(key)) return { ok: false, err: 'Clave no válida.' };

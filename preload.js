@@ -1,7 +1,7 @@
 // Puente seguro: el renderer solo puede llamar a canales de esta lista.
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
-const INVOKE = ['sys:info', 'cfg:get', 'cfg:set', 'app:elevate', 'prog:list', 'prog:openLocation', 'prog:openKey', 'prog:google', 'prog:web', 'prog:modify', 'prog:exportList', 'export:save',
+const INVOKE = ['sys:info', 'cfg:get', 'cfg:set', 'app:elevate', 'prog:list', 'prog:icon','prog:openLocation', 'prog:openKey', 'prog:google', 'prog:web', 'prog:modify', 'prog:exportList', 'export:save',
   'uninst:prepare', 'uninst:start', 'uninst:wait', 'uninst:skip', 'scan:run', 'scan:delReg', 'scan:delFiles', 'quick:confirm', 'quick:end',
   'file:open', 'file:parent', 'file:props', 'dlg:pick', 'start:list', 'start:run', 'start:kill', 'start:add', 'start:remove', 'start:toggle',
   'junk:scan', 'junk:clean', 'brow:scan', 'brow:clean', 'off:scan', 'off:clean', 'win:scan', 'win:clean', 'shred:run', 'evid:drives', 'evid:start', 'evid:cancel',
