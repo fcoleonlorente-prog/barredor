@@ -10,7 +10,7 @@ Aplicación de escritorio desarrollada con Electron, con interfaz en español, a
 
 Descarga el instalador para Windows x64 desde [GitHub Releases](https://github.com/fcoleonlorente-prog/barredor/releases/latest). Junto al instalador se publica `SHA256SUMS.txt` para comprobar la integridad del archivo.
 
-Los instaladores de Barredor se firman digitalmente con la ayuda de SignPath Foundation (ver [Política de firma de código](#política-de-firma-de-código)).
+**Firma digital:** la primera publicación se está preparando sin firma digital. El flujo conserva una integración opcional con SignPath; consulta el estado real de firma en las notas de cada versión y la [política de firma de código](#política-de-firma-de-código).
 
 > **Requiere administrador.** Barredor necesita permisos de administrador para funcionar completamente. Al abrirlo se reinicia solo con permisos elevados y Windows pedirá confirmación; si la rechazas, funciona en modo limitado (sin borrar `HKLM` ni `Archivos de programa`). El instalador muestra este aviso antes de instalar.
 
@@ -187,7 +187,7 @@ Para proponer mejoras, explica el problema, incluye pasos para comprobar la solu
 
 ## Política de firma de código
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+Integración prevista con [SignPath.io](https://about.signpath.io/) y [SignPath Foundation](https://signpath.org/). Requiere configurar el servicio y obtener sus aprobaciones; no se afirma que la firma o el certificado estén activos en esta publicación.
 
 - **Autores y revisores (committers and reviewers):** [Francisco León](https://github.com/fcoleonlorente-prog)
 - **Aprobadores (approvers):** [Francisco León](https://github.com/fcoleonlorente-prog)
