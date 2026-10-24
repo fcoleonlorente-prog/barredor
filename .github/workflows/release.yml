@@ -52,6 +52,7 @@ jobs:
             Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue
             Get-ItemProperty 'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue
           )
+          $entries | Where-Object { $_.DisplayName -like 'Barredor*' } | Select-Object DisplayName,Publisher,DisplayVersion,DisplayIcon | ConvertTo-Json | Set-Content dist/installed.json
           $installed = $entries | Where-Object { $_.DisplayName -eq 'Barredor' -and $_.Publisher -eq 'Barredor' } | Select-Object -First 1
           if (-not $installed -or $installed.DisplayVersion -ne $version) { throw 'No se registró la versión correcta de Barredor' }
           $exe = ($installed.DisplayIcon -replace ',\d+$','').Trim('"')
@@ -110,6 +111,7 @@ jobs:
           path: |
             dist/selftest*.log
             dist/selftest.json
+            dist/installed.json
           if-no-files-found: ignore
           retention-days: 7
       - name: Publicar versión completa en GitHub Releases
