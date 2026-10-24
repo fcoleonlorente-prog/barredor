@@ -94,7 +94,7 @@ Sigue las instrucciones del desinstalador del propio programa. Espera a que term
 
 ### 4. Revisar las claves del registro
 
-Los resultados en **negrita** son coincidencias fuertes que pueden seleccionarse para borrar. Las coincidencias débiles se muestran como información y no se eliminan mediante esta limpieza.
+Los resultados en **negrita** son coincidencias fuertes que pueden seleccionarse para borrar. Las coincidencias dudosas vienen sin marcar: si pertenecen al programa puedes marcarlas y se borrarán (con confirmación y copia). Las carpetas dudosas que están vacías se tratan como seguras.
 
 Desmarca cualquier elemento sobre el que tengas dudas. Antes de borrar una clave seleccionada, el proceso principal intenta exportar una copia; si esa copia falla, omite el borrado de esa clave.
 

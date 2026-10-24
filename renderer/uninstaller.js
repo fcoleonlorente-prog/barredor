@@ -140,9 +140,9 @@ function pintarArbol(raiz, filas) {
   const nodo = (nombre, n) => {
     let cb = null, lab = nombre;
     if (n.item) {
-      cb = h('input', { type: 'checkbox', checked: n.item.nivel === 'fuerte', disabled: n.item.nivel === 'excluida' });
+      cb = h('input', { type: 'checkbox', checked: n.item.nivel === 'fuerte', disabled: n.item.nivel === 'excluida', title: n.item.nivel === 'debil' ? 'Dudoso: márcalo solo si es del programa' : '' });
       filas.push({ item: n.item, cb });
-      lab = h('span', { class: n.item.nivel === 'fuerte' ? 'fuerte' : n.item.nivel === 'excluida' ? 'excl' : 'debil', text: etiquetaItem(n.item, nombre) + (n.item.nivel === 'debil' ? '  (coincidencia débil: no se borra)' : n.item.nivel === 'excluida' ? '  (protegida)' : '') });
+      lab = h('span', { class: n.item.nivel === 'fuerte' ? 'fuerte' : n.item.nivel === 'excluida' ? 'excl' : 'debil', text: etiquetaItem(n.item, nombre) + (n.item.nivel === 'debil' ? '  (dudoso: revisa antes de marcar)' : n.item.nivel === 'excluida' ? '  (protegida)' : '') });
     }
     const ctx = n.item ? { oncontextmenu: (e) => menuReg(e, n.item) } : {};
     if (!n.hijos.size) return h('div', { class: 'leaf', ...ctx }, cb, lab);
@@ -224,16 +224,16 @@ function asistente({ prog, forzada, nombre }) {
     const vacio = !ctx.scan.registro.length;
     m.titulo.textContent = `Restos del registro (${ctx.scan.registro.length})`;
     m.body.replaceChildren(...(ctx.scan.aviso ? [h('p', { class: 'warn', text: ctx.scan.aviso })] : []),
-      h('p', { class: 'mute', text: 'En negrita: coincidencia fuerte (se pueden borrar). El resto se muestra pero no se borra. Antes de borrar cada clave se guarda una copia.' }),
+      h('p', { class: 'mute', text: 'En negrita: coincidencia fuerte (marcadas). Las dudosas vienen sin marcar: si pertenecen al programa, márcalas y también se borrarán. Antes de borrar cada clave se guarda una copia.' }),
       vacio ? h('p', { class: 'ok', text: 'No se han encontrado restos en el registro.' }) : arbol);
     m.foot.replaceChildren(
       h('button', { class: 'btn', disabled: vacio, onclick: () => { const todo = filas.some((f) => !f.cb.checked && !f.cb.disabled); filas.forEach((f) => !f.cb.disabled && (f.cb.checked = todo)); } }, 'Seleccionar todo'),
       h('button', { class: 'btn peligro', disabled: vacio, onclick: async () => {
         const marcadas = filas.filter((f) => f.cb.checked && !f.cb.disabled);
-        const ok = marcadas.filter((f) => f.item.nivel === 'fuerte').map((f) => ({ key: f.item.key, valor: f.item.valor }));
-        ctx.omitidas += marcadas.length - ok.length;
-        if (!ok.length) return toast('No hay claves seguras marcadas.');
-        const r = await inv('scan:delReg', ok);
+        const ok = marcadas.map((f) => ({ key: f.item.key, valor: f.item.valor }));
+        const dud = marcadas.some((f) => f.item.nivel === 'debil');
+        if (!ok.length) return toast('No hay claves marcadas.');
+        const r = await inv('scan:delReg', ok, dud);
         if (r.cancelado) return;
         ctx.borrados.reg += r.borrados || 0; ctx.fallos.push(...(r.fallos || []));
         const quitar = new Set(ok.map((o) => o.key + '|' + (o.valor || '')));
@@ -249,16 +249,16 @@ function asistente({ prog, forzada, nombre }) {
     const l = ctx.scan.archivos;
     m.titulo.textContent = `Restos de archivos y carpetas (${l.length})`;
     const tabla = h('table', {}, h('thead', {}, h('tr', {}, h('th'), h('th', { text: 'Ruta' }), h('th', { text: 'Tipo' }), h('th', { text: 'Tamaño' }))),
-      h('tbody', {}, l.map((f) => { const cb = h('input', { type: 'checkbox', checked: f.nivel === 'fuerte' }); cbs.push([f, cb]);
+      h('tbody', {}, l.map((f) => { const cb = h('input', { type: 'checkbox', checked: f.nivel === 'fuerte', title: f.nivel === 'debil' ? 'Dudoso: márcalo solo si es del programa' : '' }); cbs.push([f, cb]);
         return h('tr', { class: 'row', oncontextmenu: (e) => ctxMenu(e, [{ label: 'Abrir', onClick: () => inv('file:open', f.path) }, { label: 'Propiedades', onClick: async () => { const p = await inv('file:props', f.path); if (p.ok) aviso('Propiedades', `${p.ruta}\n${p.tipo} · ${fmtSize(p.tamano)}\nCreado: ${p.creado}\nModificado: ${p.modificado}`); } }, { label: 'Abrir carpeta contenedora', onClick: () => inv('file:parent', f.path) }, { label: 'Exportar a HTML', onClick: () => exportarHtml('Restos de archivos', l) }]) },
           h('td', {}, cb), h('td', { class: f.nivel === 'fuerte' ? 'fuerte' : 'mute', style: f.nivel === 'fuerte' ? 'font-weight:700' : '', title: f.path, text: f.path }), h('td', { text: f.esCarpeta ? 'Carpeta' : 'Archivo' }), h('td', { class: 'num', text: fmtSize(f.tamano) })); })));
-    m.body.replaceChildren(h('p', { class: 'mute', text: 'Irán a la Papelera de reciclaje (salvo que lo cambies en Opciones). Revisa antes de borrar.' }), l.length ? tabla : h('p', { class: 'ok', text: 'No se han encontrado restos de archivos.' }));
+    m.body.replaceChildren(h('p', { class: 'mute', text: 'Irán a la Papelera de reciclaje (salvo que lo cambies en Opciones). En negrita, restos seguros (marcados). Las dudosas vienen sin marcar: márcalas solo si son del programa.' }), l.length ? tabla : h('p', { class: 'ok', text: 'No se han encontrado restos de archivos.' }));
     m.foot.replaceChildren(
       h('button', { class: 'btn', disabled: !l.length, onclick: () => { const t = cbs.some(([, c]) => !c.checked); cbs.forEach(([, c]) => (c.checked = t)); } }, 'Seleccionar todo'),
       h('button', { class: 'btn peligro', disabled: !l.length, onclick: async () => {
         const sel = cbs.filter(([, c]) => c.checked).map(([f]) => f.path);
         if (!sel.length) return toast('No hay nada marcado.');
-        const r = await inv('scan:delFiles', sel);
+        const r = await inv('scan:delFiles', sel, cbs.some(([f, c]) => c.checked && f.nivel === 'debil'));
         if (r.cancelado) return;
         ctx.borrados.arch += r.borrados || 0; ctx.fallos.push(...(r.fallos || []));
         if (r.fallos && r.fallos.length) aviso(`Borrados: ${r.borrados || 0}. No se pudo borrar ${r.fallos.length}`, r.fallos.slice(0, 8).join('\n') + '\n\nSi es una carpeta de Archivos de programa, cierra Barredor y ábrelo como administrador.');
@@ -274,9 +274,9 @@ function asistente({ prog, forzada, nombre }) {
     m.paso(4);
     m.titulo.textContent = 'Resumen';
     m.body.replaceChildren(h('h3', { text: ctx.nombre }), h('p', { class: 'ok', text: `Claves del registro borradas: ${ctx.borrados.reg}` }), h('p', { class: 'ok', text: `Archivos y carpetas borrados: ${ctx.borrados.arch}` }),
-      ...(ctx.omitidas ? [h('p', { class: 'mute', text: `Coincidencias débiles que se dejaron sin tocar: ${ctx.omitidas}` })] : []),
+      ...(() => { const q = [...ctx.scan.registro, ...ctx.scan.archivos].filter((i) => i.nivel === 'debil').length; return q ? [h('p', { class: 'warn', text: `Quedan ${q} coincidencias dudosas sin borrar. Si son del programa, repite con Desinstalación forzada y márcalas; si no, déjalas.` })] : []; })(),
       ...(ctx.fallos.length ? [h('p', { class: 'warn', text: `Fallos (${ctx.fallos.length}):` }), h('div', { class: 'log', text: ctx.fallos.join('\n') })] : []),
-      h('p', { class: 'mute', text: 'Las copias están en el Gestor de copias, por si necesitas restaurar algo. ¿Te gusta Barredor? Mentorías gratuitas los domingos: divisualproject.academy' }));
+      h('p', { class: 'mute', text: 'Las copias están en el Gestor de copias, por si necesitas restaurar algo.' }));
     m.foot.replaceChildren(h('button', { class: 'btn pri', onclick: () => { m.cerrar(); B.uninst.actualizar && B.uninst.actualizar(); } }, 'Cerrar'));
   }
 }

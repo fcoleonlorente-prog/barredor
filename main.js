@@ -19,6 +19,8 @@ T.setEmitter(sendWin);
 
 // Lo que el último escaneo marcó como seguro: solo eso se puede borrar (el renderer no decide).
 const strongKeys = new Set();
+const weakKeys = new Set(); // dudosas: solo se borran si el usuario las marca y confirma
+const weakFiles = new Set();
 const scannedFiles = new Set();
 const strongFiles = new Set(); // solo estos se pueden borrar (como en el registro)
 let quickAuthorized = false;
@@ -172,13 +174,13 @@ H('uninst:wait', (id) => P.waitUninstall(id).then((code) => ({ ok: true, code })
 H('uninst:skip', (id) => P.skipWait(id));
 H('scan:run', async (o) => {
   const r = await P.scan(o || {});
-  for (const it of r.registro) if (it.nivel === 'fuerte') strongKeys.add(keyId(it.key, it.valor));
-  for (const f of r.archivos) { scannedFiles.add(lower(f.path)); if (f.nivel === 'fuerte') strongFiles.add(lower(f.path)); }
+  for (const it of r.registro) { if (it.nivel === 'fuerte') strongKeys.add(keyId(it.key, it.valor)); else if (it.nivel === 'debil') weakKeys.add(keyId(it.key, it.valor)); }
+  for (const f of r.archivos) { scannedFiles.add(lower(f.path)); if (f.nivel === 'fuerte') strongFiles.add(lower(f.path)); else if (f.nivel === 'debil') weakFiles.add(lower(f.path)); }
   return r;
 });
-H('scan:delReg', async (items) => {
+H('scan:delReg', async (items, dudosos) => {
   const cfg = U.loadConfig();
-  const sel = (items || []).filter((i) => i && strongKeys.has(keyId(i.key, i.valor)) && U.regKeyIsSafe(i.key) && !U.excludedKey(i.key, cfg));
+  const sel = (items || []).filter((i) => i && (strongKeys.has(keyId(i.key, i.valor)) || (dudosos === true && weakKeys.has(keyId(i.key, i.valor)))) && U.regKeyIsSafe(i.key) && !U.excludedKey(i.key, cfg));
   if (!sel.length) return { ok: true, borrados: 0, fallos: [] };
   if (!(await confirm(`¿Borrar ${sel.length} elemento(s) del registro?`, 'Antes de borrar cada clave se guarda una copia en el Gestor de copias.'))) return { ok: false, cancelado: true };
   let borrados = 0; const fallos = [];
@@ -190,12 +192,12 @@ H('scan:delReg', async (items) => {
   }
   return { ok: true, borrados, fallos };
 });
-H('scan:delFiles', async (paths) => {
+H('scan:delFiles', async (paths, dudosos) => {
   const cfg = U.loadConfig();
-  const sel = (paths || []).filter((p) => typeof p === 'string' && strongFiles.has(lower(p)) && U.pathIsSafe(p) && !(cfg.exclusionBasura || []).some((x) => lower(p).startsWith(lower(x))));
-  if (!sel.length) return { ok: true, borrados: 0, fallos: [`Ninguna ruta válida: ${(paths || []).length} marcada(s), solo se borran los restos en negrita (coincidencia fuerte); el resto es dudoso y se deja sin tocar. Vuelve a escanear.`] };
+  const sel = (paths || []).filter((p) => typeof p === 'string' && (strongFiles.has(lower(p)) || (dudosos === true && weakFiles.has(lower(p)))) && U.pathIsSafe(p) && !(cfg.exclusionBasura || []).some((x) => lower(p).startsWith(lower(x))));
+  if (!sel.length) return { ok: true, borrados: 0, fallos: [`Ninguna ruta válida: ${(paths || []).length} marcada(s), ninguna es un resto del último escaneo, o está en una carpeta protegida del sistema. Vuelve a escanear.`] };
   const papelera = cfg.opciones.papelera !== false;
-  if (!(await confirm(`¿Borrar ${sel.length} archivo(s) o carpeta(s)?`, papelera ? 'Irán a la Papelera de reciclaje.' : 'Se borrarán directamente (sin Papelera).'))) return { ok: false, cancelado: true };
+  if (!(await confirm(`¿Borrar ${sel.length} archivo(s) o carpeta(s)?`, (papelera ? 'Irán a la Papelera de reciclaje.' : 'Se borrarán directamente (sin Papelera).') + (dudosos === true ? '\n\nIncluye coincidencias DUDOSAS que tú has marcado: revisa que pertenezcan al programa.' : '')))) return { ok: false, cancelado: true };
   let borrados = 0; const fallos = [];
   for (const p of sel) { const r = await U.removePath(p, papelera); if (r.ok) borrados++; else fallos.push(`${p}: ${r.err || 'no se pudo borrar'}`); }
   return { ok: true, borrados, fallos };
