@@ -39,9 +39,8 @@
       "createStartMenuShortcut": true,
       "license": "build/aviso.txt",
       "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
-      "uninstallDisplayName": "${productName}"
+      "uninstallDisplayName": "Barredor"
     },
     "artifactName": "barredor-${version}-windows-${arch}.${ext}",
     "afterPack": "build/afterPack.js"
