@@ -6,7 +6,36 @@ const B = { cfg: null, tools: {}, tabs: new Map(), activo: null, info: {} };
 
 // replaceChildren/append convierten null en el texto "null": se descartan null y false.
 for (const m of ['replaceChildren', 'append']) { const o = Element.prototype[m]; Element.prototype[m] = function (...n) { return o.apply(this, n.flat().filter((x) => x != null && x !== false)); }; }
-function h(tag, attrs, ...kids) {
+// Columnas redimensionables: toda tabla.fija con cabecera recibe un asa en cada columna (arrastrar el borde).
+function hacerRedimensionable(t) {
+  if (t.dataset.rz || t.querySelector('th .grip')) return;
+  const ths = [...t.querySelectorAll('thead th')];
+  if (!ths.length) return;
+  const ws = ths.map((th) => th.offsetWidth);
+  if (!ws.every((w) => w > 0)) return; // oculta: se reintentará al volver a pintarse
+  t.dataset.rz = '1';
+  const total = () => ths.reduce((a, th) => a + th.offsetWidth, 0);
+  ths.forEach((th, i) => {
+    th.style.width = ws[i] + 'px';
+    const g = document.createElement('i'); g.className = 'grip';
+    g.onclick = (e) => e.stopPropagation();
+    g.onmousedown = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const x0 = e.clientX, w0 = th.offsetWidth;
+      const mv = (ev) => { th.style.width = Math.max(50, w0 + ev.clientX - x0) + 'px'; t.style.width = total() + 'px'; };
+      const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+      addEventListener('mousemove', mv); addEventListener('mouseup', up);
+    };
+    th.append(g);
+  });
+  t.style.width = Math.max(total(), t.parentElement ? t.parentElement.clientWidth : 0) + 'px';
+  if (t.parentElement) t.parentElement.style.overflowX = 'auto';
+}
+new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => {
+  if (n.nodeType !== 1) return;
+  if (n.matches('table.fija')) hacerRedimensionable(n);
+  n.querySelectorAll && n.querySelectorAll('table.fija').forEach(hacerRedimensionable);
+}))).observe(document.documentElement, { childList: true, subtree: true });function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;

@@ -248,7 +248,7 @@ function asistente({ prog, forzada, nombre }) {
     m.paso(3);
     const l = ctx.scan.archivos;
     m.titulo.textContent = `Restos de archivos y carpetas (${l.length})`;
-    const tabla = h('table', {}, h('thead', {}, h('tr', {}, h('th'), h('th', { text: 'Ruta' }), h('th', { text: 'Tipo' }), h('th', { text: 'Tamaño' }))),
+    const tabla = h('table', { class: 'fija' }, h('thead', {}, h('tr', {}, h('th'), h('th', { text: 'Ruta' }), h('th', { text: 'Tipo' }), h('th', { text: 'Tamaño' }))),
       h('tbody', {}, l.map((f) => { const cb = h('input', { type: 'checkbox', checked: f.nivel === 'fuerte', title: f.nivel === 'debil' ? 'Dudoso: márcalo solo si es del programa' : '' }); cbs.push([f, cb]);
         return h('tr', { class: 'row', oncontextmenu: (e) => ctxMenu(e, [{ label: 'Abrir', onClick: () => inv('file:open', f.path) }, { label: 'Propiedades', onClick: async () => { const p = await inv('file:props', f.path); if (p.ok) aviso('Propiedades', `${p.ruta}\n${p.tipo} · ${fmtSize(p.tamano)}\nCreado: ${p.creado}\nModificado: ${p.modificado}`); } }, { label: 'Abrir carpeta contenedora', onClick: () => inv('file:parent', f.path) }, { label: 'Exportar a HTML', onClick: () => exportarHtml('Restos de archivos', l) }]) },
           h('td', {}, cb), h('td', { class: f.nivel === 'fuerte' ? 'fuerte' : 'mute', style: f.nivel === 'fuerte' ? 'font-weight:700' : '', title: f.path, text: f.path }), h('td', { text: f.esCarpeta ? 'Carpeta' : 'Archivo' }), h('td', { class: 'num', text: fmtSize(f.tamano) })); })));
