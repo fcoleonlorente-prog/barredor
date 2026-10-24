@@ -5,7 +5,7 @@ html[data-tema="oscuro"]{--bg:#0f1417;--bg2:#161d21;--bg3:#1d262b;--bg4:#192227;
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:13px "Segoe UI",system-ui,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}
 .ico{display:inline-flex;line-height:0;flex:none}.ico svg{display:block}
-#app{display:flex;height:100vh}
+#app{display:flex;height:calc(100vh - 36px)}
 
 /* Barra lateral de herramientas */
 #side{width:94px;background:linear-gradient(90deg,var(--grad1),var(--grad2));border-right:1px solid var(--line);display:flex;flex-direction:column;padding:8px 6px;overflow-y:auto;gap:3px}
@@ -152,3 +152,70 @@ tr.row{cursor:default}tr.row:hover{background:var(--bg3)}tr.sel,tr.sel:nth-child
 .tabs-int{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--line)}
 .tabs-int button{background:none;border:0;padding:7px 14px;cursor:pointer;color:var(--mute);border-bottom:2px solid transparent}.tabs-int button:hover{color:var(--fg)}.tabs-int button.act{color:var(--accfg);border-color:var(--acc);font-weight:600}
 .form{display:grid;gap:10px;max-width:640px}.form label{display:flex;gap:8px;align-items:center}
+
+/* Barra de título y menú propios */
+#titlebar{height:36px;display:flex;align-items:center;gap:6px;padding:0 150px 0 10px;background:var(--bg4);border-bottom:1px solid var(--line);-webkit-app-region:drag;user-select:none}
+#titlebar.sin-menu #menubar{display:none}
+.tb-logo{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,#22c9b6,var(--acc2));flex:none}
+.tb-name{font-weight:600;margin-right:8px;color:var(--fg)}
+.tb-drag{flex:1;align-self:stretch}
+#menubar{display:flex;gap:1px;-webkit-app-region:no-drag}
+.mn{position:relative}
+.mn>button{background:none;border:1px solid transparent;border-radius:5px;padding:4px 10px;cursor:pointer}
+.mn>button:hover,.mn>button:focus-visible,.mn.on>button{background:var(--bg2);border-color:var(--line)}
+.mn>button:focus-visible,.mi:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.mdrop{display:none;position:absolute;left:0;top:100%;margin-top:2px;min-width:290px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:4px;box-shadow:var(--modal);z-index:70}
+.mn.on .mdrop{display:block}
+.mi{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-radius:4px;padding:6px 10px;text-align:left;cursor:pointer;white-space:nowrap}
+.mi:hover:not(:disabled),.mi:focus{background:var(--sel);outline:none}
+.mi:disabled{opacity:.45;cursor:default}
+.mi .chk{width:14px;color:var(--acc);flex:none}
+.mi .lbl{flex:1}.mi kbd{font:inherit;font-size:11.5px;color:var(--mute);margin-left:18px}
+.msep{height:1px;background:var(--line);margin:4px 2px}
+
+/* Cabecera de herramienta, resumen y estados */
+.th{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line2);background:linear-gradient(var(--bg2),var(--bg4))}
+.th-ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--sel);color:var(--accfg);border:1px solid var(--line);flex:none}
+.th-tx{flex:1;min-width:0}.th-tx h2{margin:0 0 2px;font-size:17px}.th-tx p{margin:0;color:var(--mute);line-height:1.35}
+.th-stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.stat{display:flex;flex-direction:column;align-items:flex-end;min-width:92px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);box-shadow:var(--sombra)}
+.stat b{font-size:15px;color:var(--fg)}.stat span{font-size:11px;color:var(--mute)}
+.stat.acc b{color:var(--accfg)}.stat.ok b{color:var(--ok)}
+.vacio-est{display:flex;flex-direction:column;align-items:center;gap:6px;padding:48px 20px;color:var(--mute);text-align:center}
+.vacio-est>.ico{color:var(--acc);opacity:.7;background:var(--sel);padding:16px;border-radius:50%;box-sizing:content-box;margin-bottom:6px}
+.vacio-est b{color:var(--fg);font-size:14px}.vacio-est p{margin:0;max-width:420px}
+.vacio-est .prog{width:260px}
+.badge{display:inline-block;padding:1px 9px;border-radius:10px;font-size:11.5px;background:var(--bg3);color:var(--mute)}
+.badge.ok{background:#1b8a5a22;color:var(--ok)}.badge.warn{background:#b26a0022;color:var(--warn)}
+td.mono{font-family:Consolas,monospace;font-size:12px;color:var(--mute)}
+
+/* Listas con casilla y tamaño alineado */
+.lrow{display:grid;grid-template-columns:22px minmax(0,1fr) 96px;gap:8px;align-items:center;padding:5px 10px;border-bottom:1px solid var(--line2);cursor:pointer;margin:0}
+.lrow:nth-child(even){background:var(--bg4)}.lrow:hover{background:var(--bg3)}
+.lrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .sz{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+.lrow.x{grid-template-columns:30px minmax(0,1fr) 96px}
+.cat{border:1px solid var(--line);border-radius:10px;margin:0 0 10px;background:var(--bg2);overflow:hidden;box-shadow:var(--sombra)}
+.cat>summary{display:grid;grid-template-columns:22px minmax(0,1fr) 150px 96px;gap:10px;align-items:center;padding:9px 12px;cursor:pointer;background:var(--bg4);list-style:none}
+.cat>summary::-webkit-details-marker{display:none}
+.cat[open]>summary{border-bottom:1px solid var(--line)}
+.cat .cn b{margin-right:8px}.cat .cn span{color:var(--mute)}
+.mini{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden}.mini>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc))}
+.cat .sz{text-align:right;font-weight:600}
+.cat .mas{padding:6px 12px;color:var(--mute)}
+
+/* Tarjetas (navegadores, herramientas de Windows) */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.ncard{border:1px solid var(--line);border-radius:12px;background:var(--bg2);box-shadow:var(--sombra);padding:14px;display:flex;flex-direction:column;gap:8px}
+.ncard:hover{border-color:var(--acc)}
+.nhead{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.nhead .chip{width:38px;height:38px;flex:none}.nhead b{flex:1;font-size:14px}
+.ncard .aviso-ab{color:var(--warn);font-size:12px}
+.ncard .lrow{border:0;background:none!important;padding:4px 2px}
+.ncard .lrow:hover{background:var(--bg3)!important;border-radius:5px}
+.ncard .btn{align-self:flex-start;margin-top:auto}.ncard p{margin:0;color:var(--mute);line-height:1.35}
+
+/* Borrado seguro / evidencias */
+.panelc{border:1px solid var(--line);border-radius:10px;background:var(--bg4);padding:14px;margin-bottom:12px}
+.zona .ico{color:var(--acc);display:flex;justify-content:center;margin-bottom:6px}
+.pct{display:flex;justify-content:space-between;color:var(--mute);font-size:12px}

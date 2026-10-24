@@ -33,38 +33,28 @@ const fmtSize = (n) => (n > 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1280, height: 780, minWidth: 980, minHeight: 600, show: !SELFTEST, backgroundColor: '#f4f7f8', title: 'Barredor',
+    width: 1280, height: 780, minWidth: 980, minHeight: 600, show: !SELFTEST, backgroundColor: '#eef2f4', title: 'Barredor', autoHideMenuBar: true,
+    titleBarStyle: 'hidden', titleBarOverlay: overlayFor(U.loadConfig().opciones.tema),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  buildMenu();
   applyView();
 }
+// Barra de título integrada: los botones de ventana siguen el tema. El menú lo dibuja el renderer (HTML).
+const overlayFor = (tema) => (tema === 'oscuro' ? { color: '#161d21', symbolColor: '#e6eef0', height: 36 } : { color: '#f6f9fa', symbolColor: '#1b2a30', height: 36 });
 function applyView() {
   const o = U.loadConfig().opciones;
-  if (win && !win.isDestroyed()) win.setMenuBarVisibility(o.barraMenu !== false);
+  if (win && !win.isDestroyed()) { try { win.setTitleBarOverlay(overlayFor(o.tema)); } catch { /* sin overlay */ } }
 }
-function buildMenu() {
-  const m = (id) => () => sendWin('menu', id);
-  const tools = [['uninstaller', 'Desinstalador'], ['startup', 'Gestor de inicio'], ['junk', 'Limpiador de archivos basura'], ['browsers', 'Limpiador de navegadores'], ['office', 'Limpiador de Office'],
-    ['windows', 'Limpiador de Windows'], ['shred', 'Borrado seguro'], ['evidence', 'Eliminador de evidencias'], ['backups', 'Gestor de copias'], ['wintools', 'Herramientas de Windows'], ['options', 'Opciones']];
-  const tpl = [
-    { label: 'Archivo', submenu: [{ label: 'Exportar lista a HTML', click: m('export-html') }, { label: 'Exportar lista a TXT', click: m('export-txt') }, { label: 'Reconstruir caché', click: m('refresh') }, { type: 'separator' }, { label: 'Salir', role: 'quit' }] },
-    { label: 'Ver', submenu: [{ label: 'Barra de estado', click: m('toggle-status') }, { label: 'Panel de detalles', click: m('toggle-details') }, { label: 'Cambiar tema claro/oscuro', click: m('toggle-theme') }] },
-    { label: 'Herramientas', submenu: [...tools.map(([id, label]) => ({ label, click: m('tool:' + id) })), { type: 'separator' }, { label: 'Modo cazador', click: () => openHunter() }, { type: 'separator' },
-      { label: 'Monitor de instalación (Próximamente)', enabled: false }, { label: 'Base de datos online de logs (Próximamente)', enabled: false }, { label: 'Activación y licencias (Próximamente)', enabled: false }] },
-    { label: 'Ayuda', submenu: [{ label: 'Acerca de Barredor', click: () => dialog.showMessageBox(win, { type: 'info', title: 'Acerca de Barredor', message: 'Barredor 1.0', detail: 'Desinstalador de programas con limpieza de restos.\nSin telemetría ni conexiones a internet.\nHaz siempre copia de seguridad antes de borrar.' }) }] }
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(tpl));
-}
+Menu.setApplicationMenu(null);
 
 // ---------- Modo cazador ----------
 function openHunter() {
   if (hunterWin && !hunterWin.isDestroyed()) { hunterWin.focus(); return; }
   hunterWin = new BrowserWindow({
-    width: 360, height: 420, alwaysOnTop: true, resizable: false, minimizable: true, title: 'Modo cazador', autoHideMenuBar: true, backgroundColor: '#f4f7f8',
+    width: 360, height: 420, alwaysOnTop: true, resizable: false, minimizable: true, title: 'Modo cazador', autoHideMenuBar: true, backgroundColor: '#f6f9fa',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   hunterWin.setMenu(null);

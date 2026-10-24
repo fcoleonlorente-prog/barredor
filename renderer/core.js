@@ -141,4 +141,6 @@ function applyView() {
   $('#status').classList.toggle('hidden', !o.barraEstado);
   $('#details').classList.toggle('hidden', !o.panelDetalles);
   renderSide();
+  $('#titlebar').classList.toggle('sin-menu', o.barraMenu === false);
+  if (typeof menuPintar === 'function') menuPintar();
 }
