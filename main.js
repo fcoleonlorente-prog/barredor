@@ -35,7 +35,7 @@ async function confirm(msg, detail, label = 'Borrar') {
 const fmtSize = (n) => (n > 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB');
 
 function createWindow() {
-  win = new BrowserWindow({
+  win = new BrowserWindow({ icon: path.join(__dirname, 'build', 'icon.png'),
     width: 1280, height: 780, minWidth: 980, minHeight: 600, show: !SELFTEST, backgroundColor: '#eef2f4', title: 'Barredor', autoHideMenuBar: true,
     titleBarStyle: 'hidden', titleBarOverlay: overlayFor(U.loadConfig().opciones.tema),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
@@ -56,7 +56,7 @@ Menu.setApplicationMenu(null);
 // ---------- Modo cazador ----------
 function openHunter() {
   if (hunterWin && !hunterWin.isDestroyed()) { hunterWin.focus(); return; }
-  hunterWin = new BrowserWindow({
+  hunterWin = new BrowserWindow({ icon: path.join(__dirname, 'build', 'icon.png'),
     width: 360, height: 420, alwaysOnTop: true, resizable: false, minimizable: true, title: 'Modo cazador', autoHideMenuBar: true, backgroundColor: '#f6f9fa',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
