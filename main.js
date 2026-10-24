@@ -94,7 +94,7 @@ H('cfg:set', (patch) => {
   return cfg;
 });
 H('app:elevate', async () => {
-  const exe = process.execPath, args = app.isPackaged ? '' : `"${app.getAppPath()}"`;
+  const exe = process.execPath, args = app.isPackaged ? '--elevado' : `"${app.getAppPath()}"`; // ArgumentList no admite cadena vacía
   const r = await U.ps('Start-Process -FilePath $env:BARREDOR_EXE -ArgumentList $env:BARREDOR_ARGS -Verb RunAs', { BARREDOR_EXE: exe, BARREDOR_ARGS: args });
   if (r.ok) setTimeout(() => app.quit(), 500);
   return { ok: r.ok, err: r.err.trim() };
