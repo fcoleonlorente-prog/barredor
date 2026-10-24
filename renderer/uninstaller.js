@@ -274,7 +274,7 @@ function asistente({ prog, forzada, nombre }) {
     m.paso(4);
     m.titulo.textContent = 'Resumen';
     m.body.replaceChildren(h('h3', { text: ctx.nombre }), h('p', { class: 'ok', text: `Claves del registro borradas: ${ctx.borrados.reg}` }), h('p', { class: 'ok', text: `Archivos y carpetas borrados: ${ctx.borrados.arch}` }),
-      ctx.omitidas ? h('p', { class: 'mute', text: `Coincidencias débiles que se dejaron sin tocar: ${ctx.omitidas}` }) : null,
+      ...(ctx.omitidas ? [h('p', { class: 'mute', text: `Coincidencias débiles que se dejaron sin tocar: ${ctx.omitidas}` })] : []),
       ...(ctx.fallos.length ? [h('p', { class: 'warn', text: `Fallos (${ctx.fallos.length}):` }), h('div', { class: 'log', text: ctx.fallos.join('\n') })] : []),
       h('p', { class: 'mute', text: 'Las copias están en el Gestor de copias, por si necesitas restaurar algo. ¿Te gusta Barredor? Mentorías gratuitas los domingos: divisualproject.academy' }));
     m.foot.replaceChildren(h('button', { class: 'btn pri', onclick: () => { m.cerrar(); B.uninst.actualizar && B.uninst.actualizar(); } }, 'Cerrar'));

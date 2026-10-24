@@ -311,7 +311,13 @@ async function selfTest() {
   app.exit(out.ok ? 0 : 1);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Un desinstalador necesita administrador (HKLM, Archivos de programa): se reabre elevado; si se rechaza el aviso de Windows, sigue en modo limitado.
+  if (app.isPackaged && !SELFTEST && !U.isElevated()) {
+    const args = argv.slice(1).map((a) => `"${String(a).replace(/"/g, '')}"`).join(' ');
+    const r = await U.ps('Start-Process -FilePath $env:BARREDOR_EXE -ArgumentList $env:BARREDOR_ARGS -Verb RunAs', { BARREDOR_EXE: process.execPath, BARREDOR_ARGS: args || '--elevado' });
+    if (r.ok) { app.quit(); return; }
+  }
   createWindow();
   if (SELFTEST) { selfTest(); return; }
   win.webContents.on('did-finish-load', () => {

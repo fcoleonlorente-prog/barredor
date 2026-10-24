@@ -4,6 +4,8 @@ const inv = (ch, ...a) => api.invoke(ch, ...a);
 const $ = (s, r = document) => r.querySelector(s);
 const B = { cfg: null, tools: {}, tabs: new Map(), activo: null, info: {} };
 
+// replaceChildren/append convierten null en el texto "null": se descartan null y false.
+for (const m of ['replaceChildren', 'append']) { const o = Element.prototype[m]; Element.prototype[m] = function (...n) { return o.apply(this, n.flat().filter((x) => x != null && x !== false)); }; }
 function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
