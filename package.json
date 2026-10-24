@@ -1,0 +1,26 @@
+{
+  "name": "barredor",
+  "version": "1.0.0",
+  "description": "Barredor: desinstalador de programas para Windows con limpieza de restos",
+  "author": "Barredor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "selftest": "electron . --selftest",
+    "dist": "electron-builder --win nsis"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "app.barredor.desktop",
+    "productName": "Barredor",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "lib/**", "renderer/**"],
+    "win": { "target": "nsis", "signAndEditExecutable": false },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true }
+  }
+}
+

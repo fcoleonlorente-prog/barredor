@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="es" data-tema="oscuro">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Modo cazador</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body style="padding:12px;overflow:auto">
+  <div id="zona" class="zona" style="font-size:44px;cursor:pointer" title="Elegir ejecutable o acceso directo">🎯<div style="font-size:12px">Arrastra aquí un .exe o acceso directo<br>o pulsa para elegirlo</div></div>
+  <div class="bar" style="margin-top:8px"><button class="btn" id="procs">Elegir proceso en ejecución…</button></div>
+  <div id="res"></div>
+  <script src="hunter.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es" data-tema="oscuro">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>Barredor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="side"></aside>
+    <div id="main">
+      <div id="cmdbar"></div>
+      <div id="tabs"></div>
+      <div id="content"></div>
+      <div id="details"></div>
+      <div id="status"><span id="status-text">Listo</span><span id="status-right"></span></div>
+    </div>
+  </div>
+  <div id="overlay"></div>
+  <div id="ctx" class="hidden"></div>
+  <div id="toasts"></div>
+  <script src="core.js"></script>
+  <script src="uninstaller.js"></script>
+  <script src="tools.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
