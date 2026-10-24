@@ -39,7 +39,6 @@
       "createStartMenuShortcut": true,
       "license": "build/aviso.txt",
       "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
       "uninstallDisplayName": "Barredor"
     },
