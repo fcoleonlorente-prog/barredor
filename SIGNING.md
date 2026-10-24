@@ -1,12 +1,12 @@
-﻿# Firma digital con SignPath Foundation
+# Firma digital y publicación
 
-Pasos que solo puede hacer el titular del proyecto (yo no puedo crear cuentas ni claves):
+La publicación de Windows está en `.github/workflows/release.yml`.
 
-1. Solicita el programa gratuito para código abierto en https://signpath.org (formulario "apply"). Piden, entre otras cosas, una licencia de código abierto aprobada (este repositorio es MIT), un repositorio público y que el programa no sea malicioso ni potencialmente no deseado. Un desinstalador que borra claves del registro puede revisarse con más cuidado: explica que pide confirmación y guarda copias.
-2. Cuando te aprueben, en SignPath crea el proyecto con identificador `barredor`, una política `release-signing` y una configuración de artefacto que firme el `.exe` que contiene el zip subido.
-3. En GitHub (Settings > Secrets and variables > Actions):
-   - Secret `SIGNPATH_API_TOKEN`: el token de API de SignPath.
-   - Variable `SIGNPATH_ORGANIZATION_ID`: el identificador de tu organización en SignPath.
-4. Para publicar: `git tag v1.0.1 && git push origin v1.0.1`. La automatización construye, firma y crea el Release con el `.exe` firmado.
+- Si `SIGNPATH_ORGANIZATION_ID` no está configurado, publica una versión de prueba **sin firma digital**, indicada como tal en las notas.
+- Si esa variable está configurada, exige el paso de SignPath y comprueba la firma en Windows antes de publicar. Un fallo no se convierte en una publicación sin firma.
+- Mantiene el secret `SIGNPATH_API_TOKEN`, proyecto `barredor` y política `release-signing` de la configuración original. Solo el titular debe introducir las credenciales en GitHub y gestionar las aprobaciones necesarias en SignPath.
+- `SHA256SUMS.txt` se genera después de seleccionar el archivo final, firmado o sin firmar.
 
-Hasta que SignPath te apruebe, el paso de firma falla. Mientras tanto usa el instalador sin firmar de `npm run dist`.
+Para habilitar la firma, solicita el programa de SignPath Foundation en https://signpath.org y completa su proceso de aprobación; no se presupone que la solicitud esté aprobada ni que todos sus requisitos estén satisfechos.
+
+Para publicar otra versión, incrementa `version` en `package.json` y sube el cambio a `main`, o ejecuta el flujo desde Actions. No se sobrescribe una publicación existente.

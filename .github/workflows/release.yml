@@ -1,36 +1,79 @@
-﻿name: Publicar instalador firmado
-
-# Se lanza al subir una etiqueta (git tag v1.0.1 && git push origin v1.0.1) o a mano desde la pestaña Actions.
+name: Publicar Barredor para Nexo
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
-
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release.yml
+      - package.json
 permissions:
   contents: write
-
+concurrency:
+  group: barredor-release
+  cancel-in-progress: false
 jobs:
-  instalador:
+  windows-release:
     runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
           cache: npm
-      - run: npm ci
-      # En CI electron-builder puede incrustar el icono él mismo (en el PC local se usa build/afterPack.js).
-      - run: npx electron-builder --win nsis --publish never -c.win.signAndEditExecutable=true
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-      - name: Subir instalador sin firmar
+      - name: Instalar dependencias bloqueadas
+        run: npm ci
+      - name: Comprobar sintaxis
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem main.js,preload.js,lib/*.js,renderer/*.js | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Error de sintaxis en $($_.Name)" }
+          }
+      - name: Crear instalador Windows x64
+        run: npm run dist -- --x64 --publish never
+      - name: Instalar y probar Barredor en Windows
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installer = (Resolve-Path "dist/barredor-$version-windows-x64.exe").Path
+          $p = Start-Process -FilePath $installer -ArgumentList '/S' -Wait -PassThru
+          if ($p.ExitCode -notin @(0,3010,1641)) { throw "El instalador falló: $($p.ExitCode)" }
+          $entries = @(
+            Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue
+            Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue
+            Get-ItemProperty 'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue
+          )
+          $installed = $entries | Where-Object { $_.DisplayName -eq 'Barredor' -and $_.Publisher -eq 'Barredor' } | Select-Object -First 1
+          if (-not $installed -or $installed.DisplayVersion -ne $version) { throw 'No se registró la versión correcta de Barredor' }
+          $exe = ($installed.DisplayIcon -replace ',\d+$','').Trim('"')
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'No se encontró el ejecutable instalado' }
+          $resourceVersion = (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion
+          if ($resourceVersion -notlike "$version*") { throw "Versión del ejecutable incorrecta: $resourceVersion" }
+          $p = Start-Process -FilePath $exe -ArgumentList '--selftest' -Wait -PassThru -RedirectStandardOutput dist/selftest.stdout.log -RedirectStandardError dist/selftest.stderr.log
+          $report = Join-Path $env:APPDATA 'Barredor/selftest.json'
+          if (Test-Path $report) { Copy-Item $report dist/selftest.json }
+          if ($p.ExitCode -ne 0) { throw "La autoprueba falló: $($p.ExitCode)" }
+          $test = Get-Content dist/selftest.json -Raw | ConvertFrom-Json
+          if ($test.ok -ne $true) { throw 'La autoprueba no confirmó el resultado' }
+      - name: Preparar artefacto para firma digital
+        if: env.SIGNPATH_ORGANIZATION_ID != ''
         id: sin-firmar
         uses: actions/upload-artifact@v4
         with:
           name: instalador-sin-firmar
-          path: dist/*Setup*.exe
-      # Requiere la cuenta de SignPath Foundation: ver SIGNING.md.
-      - name: Firmar con SignPath
+          path: dist/barredor-*-windows-x64.exe
+          retention-days: 7
+      - name: Firmar con SignPath cuando esté configurado
+        if: env.SIGNPATH_ORGANIZATION_ID != ''
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -40,9 +83,54 @@ jobs:
           github-artifact-id: ${{ steps.sin-firmar.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: firmado
-      - name: Publicar en Releases
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
+      - name: Validar firma y seleccionar el archivo firmado
+        if: env.SIGNPATH_ORGANIZATION_ID != ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $name = "barredor-$version-windows-x64.exe"
+          $files = @(Get-ChildItem firmado -Recurse -Filter $name)
+          if ($files.Count -ne 1) { throw 'SignPath no devolvió exactamente el instalador esperado' }
+          $signature = Get-AuthenticodeSignature -FilePath $files[0].FullName
+          if ($signature.Status -ne 'Valid') { throw 'La firma del instalador no es válida: no se publica' }
+          Copy-Item $files[0].FullName "dist/$name" -Force
+      - name: Crear comprobación SHA-256
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $name = "barredor-$version-windows-x64.exe"
+          $hash = (Get-FileHash -Algorithm SHA256 "dist/$name").Hash.ToLowerInvariant()
+          "$hash  $name" | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+      - name: Guardar diagnóstico de la compilación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-windows
+          path: |
+            dist/selftest*.log
+            dist/selftest.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Publicar versión completa en GitHub Releases
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" firmado/*.exe --title "Barredor ${{ github.ref_name }}" --generate-notes
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$version"
+          $name = "barredor-$version-windows-x64.exe"
+          gh release view $tag --json tagName 2>$null
+          if ($LASTEXITCODE -eq 0) { throw "La publicación $tag ya existe: no se sobrescribe. Incrementa la versión antes de publicar otra." }
+          if ($env:SIGNPATH_ORGANIZATION_ID) {
+            $notes = Get-Content build/release-notes.md -Raw
+            $notes.Replace('Versión de prueba sin firma digital.', 'Versión de prueba con firma digital comprobada en Windows.') | Set-Content -Encoding utf8 dist/release-notes.md
+          } else { Copy-Item build/release-notes.md dist/release-notes.md }
+          gh release create $tag --target $env:GITHUB_SHA --draft --title "Barredor $version — Primera versión de prueba" --notes-file dist/release-notes.md
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo crear el borrador' }
+          gh release upload $tag "dist/$name" dist/SHA256SUMS.txt
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudieron subir los archivos; el borrador no se publica' }
+          gh release edit $tag --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar la versión' }
