@@ -8,9 +8,17 @@ Aplicación de escritorio desarrollada con Electron, con interfaz en español, a
 
 ## Descargar
 
+**[Descargar Barredor 1.0.0 para Windows x64 (.EXE)](https://github.com/fcoleonlorente-prog/barredor/releases/download/v1.0.0/barredor-1.0.0-windows-x64.exe)**
+
+### Instalar desde Nexo Launcher
+
+En Nexo Launcher 0.2.0, pulsa **Actualizar**. La tarjeta de Barredor mostrará la versión publicada; pulsa **Instalar** para descargarla, comprobar su SHA-256 y confirmar la apertura del asistente. Al terminar, Nexo comprueba la instalación y permite abrir la aplicación.
+
+### Descarga independiente
+
 Descarga el instalador para Windows x64 desde [GitHub Releases](https://github.com/fcoleonlorente-prog/barredor/releases/latest). Junto al instalador se publica `SHA256SUMS.txt` para comprobar la integridad del archivo.
 
-**Firma digital:** la primera publicación se está preparando sin firma digital. El flujo conserva una integración opcional con SignPath; consulta el estado real de firma en las notas de cada versión y la [política de firma de código](#política-de-firma-de-código).
+**Estado:** [Barredor 1.0.0 para Windows x64](https://github.com/fcoleonlorente-prog/barredor/releases/tag/v1.0.0) está publicado como versión de prueba sin firma digital. El flujo conserva una integración opcional con SignPath; consulta el estado real de firma en las notas de cada versión y la [política de firma de código](#política-de-firma-de-código).
 
 > **Requiere administrador.** Barredor necesita permisos de administrador para funcionar completamente. Al abrirlo se reinicia solo con permisos elevados y Windows pedirá confirmación; si la rechazas, funciona en modo limitado (sin borrar `HKLM` ni `Archivos de programa`). El instalador muestra este aviso antes de instalar.
 
