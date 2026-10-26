@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FlowChat · Constructor de chatbots</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">💬 FlowChat</div>
+  <select id="flowSelect" title="Automatización"></select>
+  <button id="newFlow">+ Nueva</button>
+  <button id="renameFlow">Renombrar</button>
+  <button id="delFlow" class="danger">Eliminar</button>
+  <span class="spacer"></span>
+  <button id="exportBtn">Exportar</button>
+  <button id="importBtn">Importar</button>
+  <input id="importFile" type="file" accept="application/json" hidden>
+</header>
+<main>
+  <aside class="palette">
+    <h3>Bloques</h3>
+    <button data-add="message">✉️ Mensaje</button>
+    <button data-add="buttons">🔘 Botones</button>
+    <button data-add="question">❓ Pregunta</button>
+    <button data-add="condition">🔀 Condición</button>
+    <button data-add="end">⏹ Fin</button>
+    <p class="hint">Arrastra el punto <b>●</b> de salida de un bloque hasta otro bloque para conectarlos. Doble clic sobre una conexión para borrarla. Supr borra el bloque seleccionado.</p>
+  </aside>
+  <section id="board"><div id="world"><svg id="wires"></svg><div id="nodes"></div></div></section>
+  <aside class="chat">
+    <div class="chat-head">Vista previa <button id="resetChat">↻</button></div>
+    <div id="log"></div>
+    <div id="quick"></div>
+    <form id="chatForm"><input id="chatInput" placeholder="Escribe un mensaje…" autocomplete="off"><button>Enviar</button></form>
+    <div id="vars"></div>
+  </aside>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
